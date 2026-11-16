@@ -1,0 +1,75 @@
+core/ifcat/MANIFEST.json
+  s_bf54cd1fb4eb0b::t_5e0744fa695d4d 3-4,9-12,14,16-19,23,26,29-30,33-36,38-39,41,44
+core/ifcat/__init__.py
+  s_bf54cd1fb4eb0b::t_caca2169c5643d 6
+core/ifcat/actions.py
+  s_bf54cd1fb4eb0b::t_c6dad126247a45 1-107
+core/ifcat/adapters/registry.py
+  s_bf54cd1fb4eb0b::t_568e732256ac3a 3,19,35,44-51
+core/ifcat/batch.py
+  s_bf54cd1fb4eb0b::t_74ff6c34dce22d 56-76,85,126,134,159
+core/ifcat/calibration.py
+  s_bf54cd1fb4eb0b::t_2965cc466ced8f 4,36-37,40-41,91
+core/ifcat/cli.py
+  s_bf54cd1fb4eb0b::t_4081dec30ae692 11,24,56,58-59,120-121,123-126,134-135,223-230,233-254,259,270-272,305
+core/ifcat/dbro.py
+  s_bf54cd1fb4eb0b::t_02ce1e64742026 65-86
+core/ifcat/evidence.py
+  s_bf54cd1fb4eb0b::t_7e8893cda63ae5 72-78
+core/ifcat/ext.py
+  s_bf54cd1fb4eb0b::t_4480bbf4f63ca6 1-13
+core/ifcat/extloader.py
+  s_bf54cd1fb4eb0b::t_24eb3178ea43e1 1,3,12,14,20-22,37,39-41
+core/ifcat/flowops.py
+  s_bf54cd1fb4eb0b::t_05e11f0a3a8432 29-31
+core/ifcat/harvest.py
+  s_bf54cd1fb4eb0b::t_c42eb49e362c85 1-100
+core/ifcat/mcpdb.py
+  s_bf54cd1fb4eb0b::t_6f6f55d55b2653 4,35
+core/ifcat/primitives.py
+  s_bf54cd1fb4eb0b::t_ac41129a486b98 3-6,160-165,171-173,386,484-486,529
+core/ifcat/report.py
+  s_bf54cd1fb4eb0b::t_43c9c0c047f539 69-75,166-167
+core/ifcat/reviewpage.py
+  s_bf54cd1fb4eb0b::t_d7f049c2f5e351 13,75,81-88,143-145,168,174,182,203,214
+core/ifcat/runner.py
+  s_bf54cd1fb4eb0b::t_586cdeab8e52ac 9,12-13,28-31,34,37,88-90,95-108
+core/ifcat/scaffold.py
+  s_bf54cd1fb4eb0b::t_d6fd610c1da764 14,32
+core/ifcat/scenario.py
+  s_bf54cd1fb4eb0b::t_ee83740376241f 13-14,21,56-86,125-127,200-202,303-312,320,330-331,359,365,443-444
+core/ifcat/session.py
+  s_bf54cd1fb4eb0b::t_7b46791c4c14b8 12,162
+core/ifcat/statemodel.py
+  s_bf54cd1fb4eb0b::t_d62c0538bc95b8 3-4,15
+core/ifcat/workspace.py
+  s_bf54cd1fb4eb0b::t_8658f47e0f8b65 12,16-17,116-122,131-133
+templates/workspace/workspace.yaml
+  s_bf54cd1fb4eb0b::t_d182f52e7b88bd 3
+tests/conftest.py
+  s_bf54cd1fb4eb0b::t_cc1cc42b0099c7 4-5,8-17
+tests/core/test_framework_guarantees.py
+  s_bf54cd1fb4eb0b::t_354495dc24b876 1-239
+tools/discover_bill.py
+  s_bf54cd1fb4eb0b::t_c342a2e4567ea4 4
+tools/kb_query.py
+  s_bf54cd1fb4eb0b::t_ac2f42b7f5ada4 15-16,23
+ui/server.py
+  s_bf54cd1fb4eb0b::t_108799db984fcf 18,20,142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "29972f9485f5e94ce09a8cb0af2f931752b10a68",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
