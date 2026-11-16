@@ -53,6 +53,27 @@ def load_candidates(ws: Workspace, paths: List[Path]) -> List[Candidate]:
     return out
 
 
+def module_of(ws: Workspace, c: Candidate) -> str:
+    """场景所属模块。文件解析不了时读不到 module 字段，按 scenarios/<模块>/ 的目录名归属，
+    这样按模块运行时坏文件仍会出现在报告里，而不是被悄悄漏掉。"""
+    if c.scenario is not None:
+        return c.scenario.module
+    try:
+        parts = c.path.resolve().relative_to(ws.scenarios_dir.resolve()).parts
+    except ValueError:
+        return "未知"
+    return parts[0] if len(parts) > 1 else "未知"
+
+
+def duplicate_ids(cands: List[Candidate]) -> Dict[str, List[Path]]:
+    """场景编号必须在工作区内唯一：报告对比、基线查找、历史点阵都按编号对应。返回重复的编号及其文件。"""
+    seen: Dict[str, List[Path]] = {}
+    for c in cands:
+        if c.scenario is not None:
+            seen.setdefault(c.scenario.id, []).append(c.path)
+    return {k: v for k, v in seen.items() if len(v) > 1}
+
+
 def select(ws: Workspace, target: Optional[str], modules: Optional[List[str]], everything: bool) -> Tuple[str, List[Candidate]]:
     """返回（范围名称，候选场景）。模块按场景里的 module 字段匹配，大小写不敏感。"""
     if target:
@@ -61,7 +82,7 @@ def select(ws: Workspace, target: Optional[str], modules: Optional[List[str]], e
     cands = load_candidates(ws, ws.scenario_files())
     if modules:
         want = {m.strip().upper() for m in modules if m.strip()}
-        cands = [c for c in cands if c.scenario is not None and c.scenario.module.upper() in want]
+        cands = [c for c in cands if module_of(ws, c).upper() in want]
         return "+".join(sorted(want)), cands
     if everything:
         return "全部", cands
@@ -102,7 +123,7 @@ def run_batch(ws: Workspace, cfg: EnvConfig, scope: str, cands: List[Candidate],
         write_index(ws.results_dir)
 
     flush()
-    store = CalibrationStore(ws.results_dir, CalibrationKey(cfg.product_version, cfg.project, cfg.env_name))
+    store = CalibrationStore(ws.results_dir, CalibrationKey(cfg.product_version, cfg.project, cfg.env_name, cfg.locale))
     gate = CalibrationGate(store)
     sess: Optional[Session] = None
     db = ReadOnlyDb(cfg.db) if cfg.db else None
@@ -110,7 +131,7 @@ def run_batch(ws: Workspace, cfg: EnvConfig, scope: str, cands: List[Candidate],
         for c in cands:
             rel = str(c.path.relative_to(ws.scenarios_dir)) if c.path.is_relative_to(ws.scenarios_dir) else str(c.path)
             if c.scenario is None:
-                batch["scenarios"].append({"id": c.path.stem, "title": c.path.stem, "module": "未知", "file": rel,
+                batch["scenarios"].append({"id": c.path.stem, "title": c.path.stem, "module": module_of(ws, c), "file": rel,
                                            "status": "blocked", "reviewed": False, "review": "", "dir": "",
                                            "problem": f"场景文件无法解析：{c.error}"})
                 flush()
@@ -135,6 +156,7 @@ def run_batch(ws: Workspace, cfg: EnvConfig, scope: str, cands: List[Candidate],
                 steps = rec.steps
                 entry["problem"] = first_problem(steps)
                 entry["captured"] = rec.meta.get("captured", {})
+                entry["extensions"] = rec.meta.get("extensions_used", [])
                 write_scenario_report(rec.dir, entry)
             except Exception as exc:  # 环境或自动化自身的意外错误，不能拖垮整批
                 entry.update(status="blocked", problem=f"运行出错：{type(exc).__name__}: {exc}")

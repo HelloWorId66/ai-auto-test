@@ -8,6 +8,7 @@
   approve <场景>            记录业务审核通过（只能在业务人员明确同意后执行）
   run <场景>|--module M|--all --env   运行一个批次，生成 HTML 报告；只运行已审核的场景，--draft 仅供调试
   calibrate --env 环境                用真实页面标定组件适配器
+  harvest <工作区>...                 汇总各工作区临时补的扩展，供维护者定期归纳（只读）
 
 模块可以写多个，逗号分隔，如 --module DP,LM。
 """
@@ -20,7 +21,7 @@ from typing import Dict, List
 
 from . import guard
 from .adapters import build_default_registry
-from .batch import Candidate, forms_for, load_candidates, run_batch, select
+from .batch import Candidate, duplicate_ids, forms_for, load_candidates, run_batch, select
 from .calibration import CalibrationKey, CalibrationStore, load_probes, run_calibration
 from .config import load_config
 from .dbro import ReadOnlyDb
@@ -52,9 +53,10 @@ def _env_name(a: argparse.Namespace, ws: Workspace) -> str:
 
 def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="ifc", description="IFC AI 自动化测试框架")
-    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "init", "doctor"])
+    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "init", "doctor", "harvest"])
     ap.add_argument("target", nargs="?", help="场景（文件、相对路径或名字）")
-    ap.add_argument("rest", nargs="*", help="forms import 时的表单 ID")
+    ap.add_argument("rest", nargs="*", help="forms import 时的表单 ID；harvest 时的其他工作区目录")
+    ap.add_argument("--out", help="harvest 的输出文件（不给则打印）")
     ap.add_argument("--from", dest="src", help="forms import 的来源：产品表单定义目录")
     ap.add_argument("--product-version", help="forms import 的产品版本，如 6.2.7")
     ap.add_argument("--module", help="模块代号，如 DP；多个用逗号分隔")
@@ -115,7 +117,13 @@ def _dispatch(a: argparse.Namespace) -> int:
         from .doctor import run_doctor
 
         return run_doctor(a.workspace, a.env, a.login)
+    if a.command == "harvest":
+        return _harvest(a)
     ws = load_workspace(a.workspace)
+    # 场景里可能用到工作区扩展动作，必须先加载扩展再解析场景
+    registry = build_default_registry()
+    for e in load_extensions(registry, ws.extensions_dir)["errors"]:
+        print(f"扩展加载失败：{e}", file=sys.stderr)
 
     if a.command == "list":
         modules = a.module.split(",") if a.module else None
@@ -123,14 +131,13 @@ def _dispatch(a: argparse.Namespace) -> int:
         for c in cands:
             rel = c.path.relative_to(ws.scenarios_dir)
             print(f"{rel}\t{c.state.describe() if c.state else '无法解析：' + c.error}")
+        for sid, files in _duplicates(ws).items():
+            print(f"场景编号重复：{sid}（{'、'.join(f.name for f in files)}）", file=sys.stderr)
         return 0
 
     if a.command == "forms":
         return _forms(a, ws)
 
-    registry = build_default_registry()
-    for e in load_extensions(registry, ws.extensions_dir)["errors"]:
-        print(f"扩展加载失败：{e}", file=sys.stderr)
     bills = _bills(ws)
 
     if a.command == "calibrate":
@@ -213,14 +220,43 @@ def _render(a: argparse.Namespace, ws: Workspace, cands: List[Candidate]) -> int
     return 0
 
 
+def _duplicates(ws: Workspace) -> Dict[str, List[Path]]:
+    return duplicate_ids(load_candidates(ws, ws.scenario_files()))
+
+
+def _duplicate_message(sid: str, files: List[Path]) -> str:
+    return f"场景编号 {sid} 在工作区里重复（{'、'.join(f.name for f in files)}），编号必须唯一"
+
+
 def _issues(ws: Workspace, c: Candidate, registry, bills) -> List[str]:
     forms = forms_for(c.scenario, ws.form_dirs)
-    return [f"{i.step}: {i.message}" for i in validate_scenario(c.scenario, forms, registry, bills or None)
-            if i.level == "error"]
+    errors = [f"{i.step}: {i.message}" for i in validate_scenario(c.scenario, forms, registry, bills or None)
+              if i.level == "error"]
+    dups = _duplicates(ws)
+    if c.scenario.id in dups:
+        errors.append("-: " + _duplicate_message(c.scenario.id, dups[c.scenario.id]))
+    return errors
+
+
+def _harvest(a: argparse.Namespace) -> int:
+    from .harvest import harvest_workspace, render_markdown
+
+    targets = [t for t in [a.target, *a.rest] if t] or ([a.workspace] if a.workspace else [])
+    if not targets:
+        print("用法：ifc harvest <工作区目录>... [--out <文件>]", file=sys.stderr)
+        return 2
+    text = render_markdown([harvest_workspace(t) for t in targets])
+    if a.out:
+        Path(a.out).expanduser().write_text(text, encoding="utf-8")
+        print(f"已生成归纳清单：{a.out}")
+    else:
+        print(text)
+    return 0
 
 
 def _validate(ws: Workspace, cands: List[Candidate], registry, bills) -> int:
     bad = 0
+    dups = _duplicates(ws)
     for c in cands:
         if c.scenario is None:
             print(f"[error] {c.path.name}: 无法解析：{c.error}")
@@ -231,7 +267,9 @@ def _validate(ws: Workspace, cands: List[Candidate], registry, bills) -> int:
         for i in issues:
             print(f"[{i.level}] {c.scenario.id} {i.step}: {i.message}")
         errs = [i for i in issues if i.level == "error"]
-        bad += bool(errs)
+        if c.scenario.id in dups:
+            print(f"[error] {c.scenario.id} -: {_duplicate_message(c.scenario.id, dups[c.scenario.id])}")
+        bad += bool(errs) or c.scenario.id in dups
     print("校验通过" if not bad else f"校验未通过：{bad} 个场景有错误")
     return 1 if bad else 0
 
@@ -264,7 +302,7 @@ def _calibrate(a, ws: Workspace, registry, bills) -> int:
         return 2
     probes = [p for f in probe_files for p in load_probes(f)]
     forms = {p.form_id: load_form_file(find_form_file(p.form_id, ws.form_dirs)) for p in probes}
-    store = CalibrationStore(ws.results_dir, CalibrationKey(cfg.product_version, cfg.project, cfg.env_name))
+    store = CalibrationStore(ws.results_dir, CalibrationKey(cfg.product_version, cfg.project, cfg.env_name, cfg.locale))
     sess = Session(cfg, headless=not a.headed)
     db = ReadOnlyDb(cfg.db) if cfg.db else None
     try:

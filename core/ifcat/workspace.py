@@ -9,9 +9,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+
+from . import CORE_VERSION
 
 WORKSPACE_FILE = "workspace.yaml"
 LOCAL_FILE = "workspace.local.yaml"
@@ -111,6 +113,13 @@ def find_root(explicit: Optional[str] = None, start: Optional[Path] = None) -> P
     raise WorkspaceError(f"没有找到工作区：用 --workspace 指定，或设置环境变量 {ENV_VAR}，或在工作区目录内运行")
 
 
+def _version(text: str) -> Tuple[int, ...]:
+    try:
+        return tuple(int(p) for p in text.strip().split("."))
+    except ValueError as exc:
+        raise WorkspaceError(f"版本号写法不对：{text!r}（应为 0.2.0 这样的数字）") from exc
+
+
 def load_workspace(explicit: Optional[str] = None, start: Optional[Path] = None) -> Workspace:
     root = find_root(explicit, start)
     raw = _read(root / WORKSPACE_FILE)
@@ -119,6 +128,9 @@ def load_workspace(explicit: Optional[str] = None, start: Optional[Path] = None)
         raw.update({k: v for k, v in _read(local).items() if v not in (None, [], "")})
     if not raw.get("project"):
         raise WorkspaceError(f"{WORKSPACE_FILE} 缺少 project")
+    need = str(raw.get("framework_min_version") or "")
+    if need and _version(need) > _version(CORE_VERSION):
+        raise WorkspaceError(f"工作区要求框架版本不低于 {need}，本机框架是 {CORE_VERSION}，请先更新框架")
     return Workspace(
         root=root,
         project=str(raw["project"]),

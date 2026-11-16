@@ -1,7 +1,7 @@
 """业务落库的断言模型：单据头状态字段 + 业务结果表。
 
-依据 docs/exploration/04-业务落库.md：审批完成的标志是单据头状态='3'，
-并且业务结果表有对应记录。状态值和表名来自项目配置，不散落在场景里。
+审批完成的标志是单据头状态='3'，并且业务结果表有对应记录（见 docs/exploration/PanUI产品操作规约.md「存」「变」两行）。
+状态值和表名来自项目配置，不散落在场景里。
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-# 基类硬编码的通用单据态，见 04 §1.4
+# 产品基类里固定的通用单据态
 GENERIC_STATES = {"draft": "1", "in_flow": "2", "approved": "3", "voided": "4"}
 
 _IDENT = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")

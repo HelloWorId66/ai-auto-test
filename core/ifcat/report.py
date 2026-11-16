@@ -66,6 +66,13 @@ def write_scenario_report(scn_dir: Path, summary: Dict[str, Any]) -> Path:
     if st in MEANING:
         body.append(f'<div class="{"err-box" if st == "failed" else "warn-box"}"><b>{esc(STATUS_TEXT[st])}：</b>'
                     f'{esc(MEANING[st])}<br>{esc(summary.get("problem", ""))}</div>')
+    if meta.get("extensions_used"):
+        kinds = {"adapter": "控件", "action": "动作"}
+        used = "、".join(f'{kinds.get(x.get("kind"), x.get("kind"))} {x.get("name")}' for x in meta["extensions_used"])
+        body.append(f'<div class="card">本场景用到了工作区里临时补的扩展（尚未并入框架）：{esc(used)}。'
+                    '结果照常有效；这些扩展由框架维护者定期归纳。</div>')
+    if meta.get("unique"):
+        body.append(f'<div class="card">本次运行的不重复编号（${{unique}}）：<b>{esc(meta["unique"])}</b></div>')
     if meta.get("captured"):
         body.append('<div class="card">运行中取得的值：' + "；".join(
             f"{esc(k)} = <b>{esc(v)}</b>" for k, v in meta["captured"].items()) + "</div>")
@@ -156,6 +163,8 @@ def write_batch_report(batch_dir: Path, batch: Dict[str, Any]) -> Path:
         for s in sorted(ms, key=lambda x: STATUS_ORDER.index(x["status"])):
             link = f'<a href="{esc(s["dir"])}/report.html">{esc(s["title"])}</a>' if s.get("dir") else esc(s["title"])
             note = esc(s.get("problem") or s.get("review") or "")
+            if s.get("extensions"):
+                note += ' <span class="badge info">用到工作区扩展</span>'
             text = esc(f'{s["title"]} {s["id"]}')
             rows += (f'<tr data-status="{s["status"]}" data-text="{text}"><td>{badge(s["status"])}</td>'
                      f'<td>{link}<div class="sub">{esc(s["id"])}</div></td>'

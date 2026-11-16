@@ -69,6 +69,13 @@ class RunRecorder:
             {"name": name, "status": result.status.value, "message": result.message, "evidence": result.evidence}
         )
 
+    def note_extension(self, kind: str, name: str, source: str = "") -> None:
+        """记下本次运行用到的工作区扩展（未并入框架的适配器或动作），供报告标注和维护者定期归纳。"""
+        used = self.meta.setdefault("extensions_used", [])
+        item = {"kind": kind, "name": name, "source": source}
+        if item not in used:
+            used.append(item)
+
     def annotate_steps_since(self, start: int, **info: Any) -> None:
         """给 start 之后新记录的步骤补上场景里的业务信息（步骤号、说明、角色、是否检查点）。"""
         for st in self.steps[start:]:

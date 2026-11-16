@@ -62,6 +62,28 @@ def _oracle_factory(cfg: DbConfig) -> Any:
 
 
 register_dialect("oracle", _oracle_factory, readonly_begin="SET TRANSACTION READ ONLY")
+_CORE_KINDS = frozenset(_FACTORIES)
+_EXT_KINDS: Dict[str, bool] = {}
+
+
+def register_extension_dialect(kind: str, factory: ConnectFactory, readonly_begin: Optional[str] = None) -> None:
+    """工作区扩展接入其他数据库（如信创库）。factory 接收 DbConfig，返回 DB-API 连接；
+    readonly_begin 是该库「开启只读事务」的语句，有就给，让数据库自己也拒绝写入。不能替换框架自带的方言。"""
+    if kind in _CORE_KINDS:
+        raise ReadOnlyViolation(f"扩展层不能覆盖框架自带的数据库类型：{kind}")
+    register_dialect(kind, factory, readonly_begin)
+    _EXT_KINDS[kind] = True
+
+
+def extension_dialects() -> List[str]:
+    return sorted(_EXT_KINDS)
+
+
+def clear_extension_dialects() -> None:
+    for kind in list(_EXT_KINDS):
+        _FACTORIES.pop(kind, None)
+        _READONLY_BEGIN.pop(kind, None)
+    _EXT_KINDS.clear()
 
 
 class ReadOnlyDb:

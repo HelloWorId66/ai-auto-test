@@ -11,6 +11,7 @@ from typing import List
 
 import yaml
 
+from . import CORE_VERSION
 from .workspace import LOCAL_FILE, WORKSPACE_FILE
 
 FRAMEWORK_ROOT = Path(__file__).resolve().parents[2]
@@ -28,7 +29,7 @@ class InitError(Exception):
 
 
 def _fill(text: str, project: str) -> str:
-    return text.replace("{project}", project)
+    return text.replace("{project}", project).replace("{framework_version}", CORE_VERSION)
 
 
 def _write_new(path: Path, text: str, created: List[str], root: Path) -> None:

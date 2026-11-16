@@ -15,7 +15,9 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "core"))
+from ifcat.adapters import build_default_registry  # noqa: E402
 from ifcat.batch import load_candidates  # noqa: E402
+from ifcat.extloader import load_extensions  # noqa: E402
 from ifcat.reviewpage import review_page_name  # noqa: E402
 from ifcat.workspace import load_workspace  # noqa: E402
 
@@ -137,5 +139,6 @@ if __name__ == "__main__":
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args()
     WS = load_workspace(args.workspace)
+    load_extensions(build_default_registry(), WS.extensions_dir)  # 场景里可能用到工作区扩展动作
     print(f"http://127.0.0.1:{args.port}")
     HTTPServer(("127.0.0.1", args.port), H).serve_forever()

@@ -1,5 +1,6 @@
 # 工作区：本项目的配置、场景、状态模型、标定探针、扩展与结果。框架本身在单独的仓库，不在这里改。
 project: {project}
+framework_min_version: "{framework_version}"   # 本工作区需要的框架最低版本，框架更旧时会提示先更新
 default_env: dev
 bills: []
 probes: []

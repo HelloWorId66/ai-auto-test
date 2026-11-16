@@ -10,18 +10,10 @@ import re
 from typing import Any, Dict, List, Tuple
 
 from .htmlkit import badge, esc, page
-from .scenario import CHECKPOINT_STEPS, Scenario, describe_date_macro
+from .scenario import Scenario, action_text, describe_date_macro, is_checkpoint
 
 _VAR = re.compile(r"\$\{([^}]+)\}")
 
-_DO_TEXT = {
-    "open": "打开", "fill": "填写", "fill_grid": "填写表格", "save": "保存", "submit": "提交审批",
-    "approve": "同意", "reject": "退回", "pick_record": "选择记录", "expect_query": "检查查询结果", "expect_not_listed": "检查选不到", "capture_field": "记录字段值", "capture_db": "从数据库记录单据信息",
-    "expect_field": "检查界面", "expect_flow_completed": "检查流程办结", "expect_grid": "检查表格",
-    "expect_db_status": "检查单据状态", "expect_db_result": "检查业务结果", "expect_db_record": "检查数据库记录",
-    "edit": "点编辑修改", "open_todo": "在待办里打开单据", "submit_with_warning": "提交并检查提示",
-    "approve_blocked": "同意被拦截", "expect_visible": "检查是否显示",
-}
 _REVIEW_CLS = {"approved": "passed", "unreviewed": "skipped", "changed": "blocked"}
 
 PAGE_CSS = """
@@ -80,12 +72,20 @@ def _show(value: Any, sc: Scenario) -> str:
             return describe_date_macro(str(cur))
         if parts[0] == "captured":
             return f"〔运行时取得的「{_label(parts[-1], sc)}」〕"
-        return m.group(0)
+        return describe_date_macro(m.group(0))
 
     return _VAR.sub(sub, str(value))
 
 
 def _detail(s: Any, sc: Scenario) -> str:
+    try:
+        return _detail_of(s, sc)
+    except (KeyError, TypeError, AttributeError, ValueError):
+        # 草稿场景参数不全时审核页仍要能打开，缺什么由 validate 说明
+        return '<div class="sub">此步骤参数不完整，请先运行 ifc validate 查看缺什么</div>'
+
+
+def _detail_of(s: Any, sc: Scenario) -> str:
     a: Dict[str, Any] = s.args
     if s.do == "fill":
         chips = "".join(f"<span><b>{esc(_label(k, sc))}</b> {esc(_show(v, sc))}</span>" for k, v in a["values"].items())
@@ -140,6 +140,9 @@ def _detail(s: Any, sc: Scenario) -> str:
         return out
     if s.do == "expect_db_result":
         return f'<div class="expect">业务结果「{esc(str(a["result"]))}」应已生成</div>'
+    if a:  # 工作区扩展动作没有专门的展示方式，把它用到的数据原样列出，业务人员仍能看到填了什么、查了什么
+        chips = "".join(f"<span><b>{esc(_label(str(k), sc))}</b> {esc(_show(v, sc))}</span>" for k, v in a.items() if k != "form")
+        return f'<div class="data">{chips}</div>' if chips else ""
     return ""
 
 
@@ -162,13 +165,13 @@ def _swimlane(sc: Scenario) -> str:
     out = [f'<div class="lane" style="grid-template-columns:{cols}"><div></div>']
     out += [f'<div class="head">{esc(sc.roles.get(r, r) or "—")}</div>' for r in roles]
     for i, s in enumerate(sc.steps, 1):
-        chk = s.do in CHECKPOINT_STEPS
+        chk = is_checkpoint(s.do)
         out.append(f'<div class="no {"chk" if chk else ""}"><i>{i}</i></div>')
         for r in roles:
             if (s.role or "") == r:
                 mark = '<span class="tag">✓ 检查点</span>' if chk else ""
                 out.append(f'<div class="cell"><div class="card2 {"chk" if chk else ""}">{mark}'
-                           f'{esc(s.text or _DO_TEXT[s.do])}{_detail(s, sc)}</div></div>')
+                           f'{esc(s.text or action_text(s.do))}{_detail(s, sc)}</div></div>')
             else:
                 out.append('<div class="cell"></div>')
     out.append("</div>")
@@ -176,7 +179,7 @@ def _swimlane(sc: Scenario) -> str:
 
 
 def _scenario_section(sc: Scenario, state: Any, idx: int) -> str:
-    checks = sum(1 for s in sc.steps if s.do in CHECKPOINT_STEPS)
+    checks = sum(1 for s in sc.steps if is_checkpoint(s.do))
     body = [f'<section class="sc" id="sc{idx}"><div class="sc-h"><h2>{_kind_chip(sc.kind)}{esc(sc.title)}</h2>'
             f'<div class="sub">场景编号 {esc(sc.id)} · {len(sc.steps)} 步，{checks} 个检查点 · '
             f'{badge(_REVIEW_CLS[state.status], state.describe())}'
@@ -197,7 +200,7 @@ def render_feature_html(items: List[Tuple[Scenario, Any]]) -> str:
     """items：同一功能下的（场景，审核状态）。"""
     first = items[0][0]
     title = first.feature or first.title
-    n_chk = sum(1 for sc, _ in items for s in sc.steps if s.do in CHECKPOINT_STEPS)
+    n_chk = sum(1 for sc, _ in items for s in sc.steps if is_checkpoint(s.do))
     approved = sum(1 for _, st in items if st.approved)
     hero = (f'<div class="hero"><div class="sub">模块 {esc(first.module)} · 用例审核</div><h1>{esc(title)}</h1>'
             f'<div class="stats"><div><b>{len(items)}</b><span>个业务场景</span></div>'
@@ -208,7 +211,7 @@ def render_feature_html(items: List[Tuple[Scenario, Any]]) -> str:
         rows = "".join(
             f'<tr><td>{_kind_chip(sc.kind)}</td><td><a href="#sc{i}">{esc(sc.title)}</a>'
             f'<div class="sub">{esc(sc.goal)}</div></td>'
-            f'<td>{sum(1 for s in sc.steps if s.do in CHECKPOINT_STEPS)}</td>'
+            f'<td>{sum(1 for s in sc.steps if is_checkpoint(s.do))}</td>'
             f'<td>{badge(_REVIEW_CLS[st.status], st.describe())}</td></tr>'
             for i, (sc, st) in enumerate(items))
         parts.append('<h2>这个功能覆盖的场景</h2><table><tr><th style="width:90px">类型</th><th>场景</th>'

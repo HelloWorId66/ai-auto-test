@@ -12,13 +12,15 @@ import urllib.request
 URL = os.environ.get("IFCAT_KB_MCP_URL", "")
 if not URL or len(sys.argv) < 3:
     sys.exit(__doc__)
+# 与框架其他工具一致：直连，不走系统代理（本机代理软件会让内网地址 502）
+OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 def post(body, sid=None):
     h = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
     if sid:
         h["Mcp-Session-Id"] = sid
-    with urllib.request.urlopen(urllib.request.Request(URL, json.dumps(body).encode(), h), timeout=90) as r:
+    with OPENER.open(urllib.request.Request(URL, json.dumps(body).encode(), h), timeout=90) as r:
         return r.headers.get("Mcp-Session-Id"), r.read().decode()
 
 

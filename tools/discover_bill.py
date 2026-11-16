@@ -1,7 +1,7 @@
 """从 IFC 业务代码里自动提取任意流程的单据头模型，生成项目状态模型骨架。
 
 依据：每个流程类继承 FlowMovementAbstract，并在 initParam() 里声明
-单据头表、主键列、状态列（docs/exploration/04-业务落库.md §1）。流程编号即类名。
+单据头表、主键列、状态列（见 docs/exploration/PanUI产品操作规约.md）。流程编号即类名。
 
 用法：
   python tools/discover_bill.py --root <代码根目录> FLOW_NO [FLOW_NO ...]

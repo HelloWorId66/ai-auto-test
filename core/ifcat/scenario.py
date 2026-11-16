@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import copy
 import re
-from datetime import date, timedelta
+import secrets
+from datetime import date, datetime, timedelta
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 
+from . import actions
 from .adapters import AdapterRegistry
 from .meta import FormMeta
 
@@ -51,6 +53,37 @@ CHECKPOINT_STEPS = {"expect_flow_completed", "expect_field", "expect_visible", "
 
 _VAR = re.compile(r"\$\{([A-Za-z0-9_.+:\-\u4e00-\u9fff]+)\}")
 _DATE = re.compile(r"today(?:([+-])(\d+)([dm]?))?(:compact)?")
+UNIQUE = "unique"
+
+
+def known_action(do: Any) -> bool:
+    return do in STEP_SPECS or do in actions.extension_actions()
+
+
+def required_args(do: str) -> List[str]:
+    if do in STEP_SPECS:
+        return STEP_SPECS[do]
+    return list(actions.extension_actions()[do].required)
+
+
+def is_checkpoint(do: str) -> bool:
+    ext = actions.extension_actions().get(do)
+    return do in CHECKPOINT_STEPS or bool(ext and ext.checkpoint)
+
+
+def action_text(do: str) -> str:
+    ext = actions.extension_actions().get(do)
+    return ext.text if ext else _DO_TEXT.get(do, do)
+
+
+def new_unique(now: Optional[datetime] = None) -> str:
+    """${unique} 的值：14 位数字（年月日时分秒 + 2 位随机数），一个场景的一次运行里保持不变。
+    单据不清理，重复运行时名称、编号类数据会撞车，用它拼出不重复的值。"""
+    return (now or datetime.now()).strftime("%y%m%d%H%M%S") + f"{secrets.randbelow(100):02d}"
+
+
+def uses_unique(sc: "Scenario") -> bool:
+    return "${" + UNIQUE + "}" in repr([sc.data, [s.args for s in sc.steps]])
 
 
 class ScenarioError(Exception):
@@ -89,8 +122,9 @@ def _parse_step(raw: Dict[str, Any], idx: int) -> Step:
     if not isinstance(raw, dict):
         raise ScenarioError(f"第 {idx + 1} 步不是键值结构")
     do = raw.get("do")
-    if do not in STEP_SPECS:
-        raise ScenarioError(f"第 {idx + 1} 步动作 {do!r} 不存在，可用：{sorted(STEP_SPECS)}")
+    if not known_action(do):
+        raise ScenarioError(f"第 {idx + 1} 步动作 {do!r} 不存在，可用：{sorted([*STEP_SPECS, *actions.extension_actions()])}；"
+                            "框架没有的动作可以在工作区 extensions/ 里用 @action 临时补上")
     return Step(
         id=str(raw.get("id") or f"s{idx + 1}"),
         do=do,
@@ -163,6 +197,9 @@ def _find_base(path: Path, base_id: str, search_dir: Optional[Path]) -> Path:
     if direct.is_file():
         return direct
     roots = [search_dir] if search_dir else [path.parent, path.parent.parent]
+    if not search_dir:
+        # 基线可以在别的模块里（如变更类场景继承另一个模块的新增场景）：最后在整个 scenarios 目录下找
+        roots += [d for d in path.resolve().parents if d.name == "scenarios"][:1]
     for root in roots:
         for cand in sorted(Path(root).rglob("*.yaml")):
             if cand == path or cand.name.endswith(".review.yaml"):
@@ -263,8 +300,16 @@ def resolve(value: Any, ctx: Dict[str, Any]) -> Any:
     return _VAR.sub(lambda m: str(lookup(m.group(1))), value)
 
 
-def resolve_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """场景数据里的日期变量（${today+12m} 等）在运行时换成当天推算的日期；其他变量原样保留。"""
+def resolve_data(data: Dict[str, Any], unique: Optional[str] = None) -> Dict[str, Any]:
+    """场景数据里的日期变量（${today+12m} 等）在运行时换成当天推算的日期，${unique} 换成本次运行的不重复编号；
+    其他变量原样保留。"""
+
+    def sub(m: "re.Match[str]") -> str:
+        if _DATE.fullmatch(m.group(1)):
+            return str(resolve(m.group(0), {}))
+        if m.group(1) == UNIQUE and unique is not None:
+            return unique
+        return m.group(0)
 
     def one(v: Any) -> Any:
         if isinstance(v, dict):
@@ -272,7 +317,7 @@ def resolve_data(data: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(v, list):
             return [one(x) for x in v]
         if isinstance(v, str):
-            return _VAR.sub(lambda m: str(resolve(m.group(0), {})) if _DATE.fullmatch(m.group(1)) else m.group(0), v)
+            return _VAR.sub(sub, v)
         return v
 
     return one(data)
@@ -282,6 +327,8 @@ def describe_date_macro(text: str) -> str:
     """给审核页用：把 ${today+12m} 这类写法说成业务话。"""
 
     def desc(m: "re.Match[str]") -> str:
+        if m.group(1) == UNIQUE:
+            return "〔每次运行自动生成的不重复编号〕"
         d = _DATE.fullmatch(m.group(1))
         if not d:
             return m.group(0)
@@ -309,13 +356,13 @@ def validate_scenario(sc: Scenario, forms: Dict[str, FormMeta], registry: Option
     warn = lambda s, m: issues.append(Issue("warning", s, m))
 
     for s in sc.steps:
-        missing = [k for k in STEP_SPECS[s.do] if k not in s.args]
+        missing = [k for k in required_args(s.do) if k not in s.args]
         if missing:
             err(s.id, f"动作 {s.do} 缺少参数：{missing}")
         if s.role and s.role not in sc.roles:
             err(s.id, f"角色 {s.role} 没有在 roles 里声明")
 
-    checkpoints = [s for s in sc.steps if s.do in CHECKPOINT_STEPS]
+    checkpoints = [s for s in sc.steps if is_checkpoint(s.do)]
     if not checkpoints:
         err("-", "场景没有任何业务检查点（expect_*），不算有效场景")
 
@@ -393,7 +440,7 @@ def render_markdown(sc: Scenario) -> str:
     out += ["", "## 步骤与检查点", ""]
     for i, s in enumerate(sc.steps, 1):
         who = f"（{sc.roles.get(s.role, s.role)}）" if s.role else ""
-        mark = "【检查点】" if s.do in CHECKPOINT_STEPS else ""
-        out.append(f"{i}. {mark}{who}{s.text or _DO_TEXT[s.do]}")
+        mark = "【检查点】" if is_checkpoint(s.do) else ""
+        out.append(f"{i}. {mark}{who}{s.text or action_text(s.do)}")
     out += ["", "业务审核只需要看：步骤是否是真实用户会走的，检查点是否是真正关心的。"]
     return "\n".join(out) + "\n"

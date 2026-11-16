@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Type
 
 from ..result import BlockedError
 from .base import Adapter
@@ -16,6 +16,7 @@ class AdapterRegistry:
     def __init__(self) -> None:
         self._core: Dict[str, Adapter] = {}
         self._ext: Dict[str, Adapter] = {}
+        self._ext_source: Dict[str, str] = {}
         self._locked = False
 
     def register_core(self, cls: Type[Adapter]) -> None:
@@ -31,7 +32,7 @@ class AdapterRegistry:
     def lock_core(self) -> None:
         self._locked = True
 
-    def register_extension(self, cls: Type[Adapter]) -> None:
+    def register_extension(self, cls: Type[Adapter], source: str = "") -> None:
         name = cls.type_name
         if not name:
             raise RegistryError(f"{cls.__name__} 没有 type_name")
@@ -40,6 +41,14 @@ class AdapterRegistry:
         if name in self._ext:
             raise RegistryError(f"扩展适配器重复注册：{name}")
         self._ext[name] = cls()
+        self._ext_source[name] = source
+
+    def extension_source(self, type_name: str) -> Optional[str]:
+        """是扩展适配器时返回它所在的扩展文件名（可能为空串），核心适配器返回 None。"""
+        return self._ext_source.get(type_name)
+
+    def extension_types(self) -> Dict[str, str]:
+        return dict(self._ext_source)
 
     def get(self, type_name: str) -> Adapter:
         if type_name in self._core:

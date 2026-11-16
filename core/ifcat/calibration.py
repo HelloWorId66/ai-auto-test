@@ -1,7 +1,7 @@
 """选择器标定记录与运行前自检。
 
 适配器的选择器来自源码阅读，是否适用取决于具体环境和产品版本。
-标定结果因此按「产品版本、项目、环境」分别记录，并绑定核心库版本；
+标定结果因此按「产品版本、项目、环境、界面语言」分别记录，并绑定核心库版本；
 场景运行前用 CalibrationGate 检查用到的组件类型，没有有效标定就不放行。
 """
 from __future__ import annotations
@@ -33,12 +33,12 @@ class CalibrationKey:
     product_version: str
     project: str
     env_name: str
+    # 界面语言不同，按钮和选项文字不同，同一套适配器在另一种语言下未必可用，所以标定按语言分开记
+    locale: str = ""
 
     def path(self, results_root: str | Path) -> Path:
-        return (
-            Path(results_root) / "calibration" / _slug(self.project) / _slug(self.env_name)
-            / f"{_slug(self.product_version)}.json"
-        )
+        name = _slug(self.product_version) + (f"__{_slug(self.locale)}" if self.locale else "")
+        return Path(results_root) / "calibration" / _slug(self.project) / _slug(self.env_name) / f"{name}.json"
 
 
 @dataclass
@@ -88,7 +88,7 @@ class CalibrationGate:
         """返回不能放行的原因；可以放行返回 None。"""
         rec = self.store.get(type_name)
         k = self.store.key
-        where = f"产品版本 {k.product_version}、项目 {k.project}、环境 {k.env_name}"
+        where = f"产品版本 {k.product_version}、项目 {k.project}、环境 {k.env_name}" + (f"、语言 {k.locale}" if k.locale else "")
         if rec is None:
             return f"组件 {type_name} 在 {where} 上没有标定记录，请先运行标定"
         if not rec.passed:

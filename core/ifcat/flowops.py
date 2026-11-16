@@ -26,6 +26,9 @@ UI_TEXT: Dict[str, str] = {
     "query": "查询",
     "export": "导出",
     "confirm_pick": "确定",
+    "cancel": "取消",
+    "home_tab": "首页",
+    "search_placeholders": "搜索,关键字,查询",
     "toast_fail_words": "失败,错误,异常,fail,error",
 }
 

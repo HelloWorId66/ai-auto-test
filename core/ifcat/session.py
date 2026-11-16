@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from . import flowops
 from .config import EnvConfig
 from .result import BlockedError
 
@@ -158,7 +159,7 @@ class Session:
 
     def go_home(self) -> None:
         """回到首页（待办、已办、已完成所在页）。首页页签文字随语言变化，可用 env_params.ui_text.home_tab 覆盖。"""
-        tab = (self.cfg.env_params.get("ui_text") or {}).get("home_tab", "HomePage")
+        tab = flowops.text(self.cfg.env_params.get("ui_text"), "home_tab")
         self.page.get_by_text(tab, exact=True).first.click()
         self.page.wait_for_timeout(2500)
 

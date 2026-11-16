@@ -1,8 +1,7 @@
 """测试库（配置元数据库）MCP 的只读客户端。
 
 该 MCP 服务同时带写工具（如 executeI18nChanges），所以这里用**白名单**：只有明确列出的只读查询工具能被调用，
-其余一律拒绝，不靠工具名猜。地址来自环境变量 IFCAT_DB_MCP_URL 或工作区环境配置 env_params.db_mcp_url，
-不写死在代码里。直连、不走系统代理（本机代理软件会让内网地址 502）。
+其余一律拒绝，不靠工具名猜。地址来自环境变量 IFCAT_DB_MCP_URL，不写死在代码里。直连、不走系统代理（本机代理软件会让内网地址 502）。
 """
 from __future__ import annotations
 
@@ -33,7 +32,7 @@ class ReadOnlyMcpDb:
     def __init__(self, url: Optional[str] = None, timeout: float = 60.0):
         self.url = url or os.environ.get(URL_ENV, "")
         if not self.url:
-            raise McpDbError(f"没有配置测试库 MCP 地址：设置环境变量 {URL_ENV}，或在环境配置 env_params.db_mcp_url 里填写")
+            raise McpDbError(f"没有配置测试库 MCP 地址：请设置环境变量 {URL_ENV}")
         self.timeout = timeout
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self._sid: Optional[str] = None

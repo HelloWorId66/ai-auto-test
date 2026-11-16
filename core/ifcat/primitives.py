@@ -1,8 +1,9 @@
 """八个业务原语：开、填、存、报、批、变、查、验。
 
-脚本只通过 Primitives 操作系统。已实现并可离线测试的部分：填、验（界面字段与数据库）。
-依赖真实页面 DOM 才能确定的部分（登录、开、存、报、批、变、查），
-在「选择器标定」完成前一律返回「阻塞」，不猜选择器、不假装成功。
+脚本只通过 Primitives 操作系统。每个原语返回步骤结果：
+- passed：做完了，或检查点与预期一致；
+- failed：检查点与预期不一致（系统行为不符，疑似产品问题）；
+- blocked：步骤没能执行完（定位、等待、数据、环境、缺适配器），属于自动化问题。
 """
 from __future__ import annotations
 
@@ -22,8 +23,6 @@ from . import xlsxread
 from .adapters.business import _click_unique_text
 from .result import BlockedError, Status, StepResult
 from .statemodel import BillModel, StateModelError
-
-NOT_CALIBRATED = "尚未用真实页面标定，不能执行：{}"
 
 
 def _same_value(expected: Any, actual: Any) -> bool:
@@ -158,13 +157,20 @@ class Primitives:
             result = fn()
         except BlockedError as exc:
             result = StepResult.blocked(str(exc))
-        except Exception as exc:  # 步骤异常按失败记录，保留原因
-            result = StepResult.failed(f"{type(exc).__name__}: {exc}")
+        except Exception as exc:
+            # 步骤没能执行完（定位、等待、超时、驱动报错）是自动化自身的问题，不是系统行为与预期不符。
+            # failed 只留给检查点比对不一致，否则会把脚本问题当成产品缺陷报给业务人员。
+            result = StepResult.blocked(f"{type(exc).__name__}: {exc}")
+        if not result.ok and not result.evidence and self.page is not None:
+            result.evidence = self._screenshot("出错")
         self.rec.record_step(name, result)
         return result
 
     def _adapter(self, type_name: str) -> Adapter:
         adapter = self.registry.get(type_name)
+        source = self.registry.extension_source(type_name)
+        if source is not None:
+            self.rec.note_extension("adapter", type_name, source)
         if self.gate is not None:
             problem = self.gate.problem(type_name)
             if problem:
@@ -377,10 +383,7 @@ class Primitives:
         adapter = self._adapter(f.type)
         return adapter.get(self.page, find_field_root(self.page, form, f))
 
-    # --- 依赖真实页面标定的原语：未标定前明确阻塞 ---
-    def _blocked(self, name: str) -> StepResult:
-        return self._step(name, lambda: StepResult.blocked(NOT_CALIBRATED.format(name)))
-
+    # --- 开、存、报、批、查 ---
     def _need_nav(self) -> Any:
         if self.nav is None:
             raise BlockedError("没有提供页面导航能力（会话），不能打开表单或回到首页")
@@ -478,8 +481,9 @@ class Primitives:
         waits.poll(lambda: modal.count() >= 1, 15.0, "选择弹窗出现")
         dlg = modal.last
         title = (dlg.locator(".ant-modal-title").first.inner_text() or "").strip()
-        # 搜索框的提示文字因弹窗而异（「输入搜索内容」「请输入查询关键字」）
-        box = dlg.locator("input[placeholder*='搜索'], input[placeholder*='关键字'], input[placeholder*='查询']")
+        # 搜索框的提示文字因弹窗而异（「输入搜索内容」「请输入查询关键字」），也随界面语言变化
+        words = [w.strip() for w in flowops.text(self.ui, "search_placeholders").split(",") if w.strip()]
+        box = dlg.locator(", ".join(f'input[placeholder*="{w}"]' for w in words))
         if search and box.count():
             box.first.fill(str(find))
             box.first.press("Enter")
@@ -522,7 +526,7 @@ class Primitives:
             found = dlg.get_by_text(str(find), exact=True).count() > 0
             self.checkpoints += 1
             ev = self._screenshot("not_listed")
-            dlg.get_by_role("button", name="取消", exact=True).click()
+            dlg.get_by_role("button", name=flowops.text(self.ui, "cancel"), exact=True).click()
             if found:
                 return StepResult.failed(f"「{title}」弹窗里仍能选到「{find}」，期望选不到", ev)
             return StepResult.passed(f"「{title}」弹窗里没有「{find}」，符合预期", ev)

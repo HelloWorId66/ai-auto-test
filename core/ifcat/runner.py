@@ -6,9 +6,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Optional
 
+from . import actions
 from .primitives import Primitives
 from .result import BlockedError, Status, StepResult
-from .scenario import CHECKPOINT_STEPS, Scenario, ScenarioError, Step, resolve, resolve_data
+from .scenario import (UNIQUE, Scenario, ScenarioError, Step, is_checkpoint, new_unique, resolve, resolve_data,
+                       uses_unique)
 
 
 def _occ(a: Dict[str, Any]) -> Optional[int]:
@@ -23,13 +25,16 @@ class ScenarioRunner:
         self._role: Optional[str] = None
 
     def run(self, sc: Scenario, data_override: Optional[Dict[str, Any]] = None) -> Status:
-        data = resolve_data({**sc.data, **(data_override or {})})
+        unique = new_unique()
+        if uses_unique(sc):
+            self.prim.rec.meta["unique"] = unique
+        data = resolve_data({**sc.data, **(data_override or {})}, unique)
         for step in sc.steps:
             start = len(self.prim.rec.steps)
-            result = self._run_step(step, {"data": data, "captured": self.captured}, sc)
+            result = self._run_step(step, {"data": data, "captured": self.captured, UNIQUE: unique}, sc)
             self.prim.rec.annotate_steps_since(
                 start, sid=step.id, text=step.text, role=step.role, role_name=sc.roles.get(step.role or "", step.role),
-                checkpoint=step.do in CHECKPOINT_STEPS)
+                checkpoint=is_checkpoint(step.do))
             if not result.ok:
                 break
         self.prim.rec.meta["captured"] = {k: str(v) for k, v in self.captured.items()}
@@ -80,9 +85,26 @@ class ScenarioRunner:
                   "edit", "open_todo", "expect_visible", "submit_with_warning", "approve_blocked"):
             kwargs = {k: v for k, v in a.items()}
             return getattr(p, do)(**kwargs)
+        ext = actions.extension_actions().get(do)
+        if ext is not None:
+            return self._run_extension(ext, a)
         res = StepResult.blocked(f"未知动作 {do}")
         p.rec.record_step(do, res)
         return res
+
+    def _run_extension(self, spec: actions.ActionSpec, a: Dict[str, Any]) -> StepResult:
+        p = self.prim
+
+        def run() -> StepResult:
+            res = spec.fn(actions.ActionContext(p, self.captured), **a)
+            if not isinstance(res, StepResult):
+                raise BlockedError(f"扩展动作 {spec.name} 必须返回 StepResult（passed / failed / blocked）")
+            if spec.checkpoint:
+                p.checkpoints += 1
+            return res
+
+        p.rec.note_extension("action", spec.name, spec.source)
+        return p._step(f"{spec.text}（扩展动作 {spec.name}）", run)
 
     def _capture_db(self, a: Dict[str, Any]) -> StepResult:
         def run() -> StepResult:
