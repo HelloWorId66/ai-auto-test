@@ -1,0 +1,27 @@
+README.md
+  s_bf54cd1fb4eb0b::t_9b87b4c3a70c3e 63,74-75
+core/ifcat/MANIFEST.json
+  s_bf54cd1fb4eb0b::t_af0c30ca5ca99c 3,12,29,44
+core/ifcat/__init__.py
+  s_bf54cd1fb4eb0b::t_355158f5be6a3e 6
+core/ifcat/cli.py
+  s_bf54cd1fb4eb0b::t_b53a14da46a71c 22,313,316-317,319-321
+core/ifcat/primitives.py
+  s_bf54cd1fb4eb0b::t_0bc5a1426edce2 201-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "7a6471b2efb01584db3c91941dd4dd768ecaf364",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
