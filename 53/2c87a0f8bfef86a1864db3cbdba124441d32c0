@@ -1,0 +1,23 @@
+.gitignore
+  s_bf54cd1fb4eb0b::t_d6b81466553f91 4-6
+pyproject.toml
+  s_bf54cd1fb4eb0b::t_caeaca3b6da7cd 1-34
+requirements.lock
+  s_bf54cd1fb4eb0b::t_91c58b5beb0555 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "532c87a0f8bfef86a1864db3cbdba124441d32c0",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
