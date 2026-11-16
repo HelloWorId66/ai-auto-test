@@ -60,7 +60,7 @@ python ifc.py --workspace <工作区> render <场景>|--module DP|--all        #
 python ifc.py --workspace <工作区> approve <场景>               # 记录业务审核
 python ifc.py --workspace <工作区> run <场景>|--module DP,LM|--all --env <环境>   # 运行一个批次
 python ifc.py --workspace <工作区> calibrate --env <环境>                 # 用真实页面标定组件适配器
-python ifc.py harvest <工作区>... [--out 清单.md]                         # 维护者：汇总各工作区临时补的扩展
+python ifc.py harvest <工作区>... [--out 清单.md]                         # 维护者：汇总各工作区临时补的扩展（可一次给多个目录；只看一个时也可写 --workspace <工作区>）
 python ui/server.py --workspace <工作区>                                  # 本地运行页面
 ```
 
@@ -71,6 +71,8 @@ python ui/server.py --workspace <工作区>                                  # �
 - `<场景>/report.html`：场景详情，每一步的结果和截图，检查点高亮，运行中取得的单据编号等。
 - `results/index.html`：所有批次的历史索引，以及最近 10 次每个场景的状态点阵。
 - 失败分两类：「检查未通过」只在检查点和预期不一致时出现，疑似产品问题，交业务或开发判断；「自动化未能完成」是步骤没能执行完（定位、等待、超时、环境、数据），出错时自动留页面截图，由智能体自行处理，不打扰业务人员。
+- 场景在第一个没通过的步骤处停止，后面的步骤不再执行。两类失败都有截图：检查未通过的截图是该检查点当时的页面，自动化未能完成的截图名为「出错」。
+- 命令退出码：0 全部通过；1 有场景没通过（`run`）、有校验错误（`validate`）、有组件标定失败（`calibrate`）或自检有不通过项（`doctor`）；2 用法或配置有误，没有开始执行；3 没有运行任何场景（例如场景未审核）。
 - 报告只引用相对路径，把整个批次目录打包即可离线查看。
 
 口令写在工作区 `config/local/<环境>.yaml`（该目录不入库，测试环境在内网），或用 `password_env` 指向环境变量；不写入场景、日志、报告。

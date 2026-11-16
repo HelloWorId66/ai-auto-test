@@ -198,7 +198,8 @@ class Primitives:
             for label, value in values.items():
                 hits = form.field_by_label(label, within)
                 if not hits:
-                    raise BlockedError(f"表单 {form_id} 里没有字段「{label}」（within={within}）")
+                    where = f"（限定在 {within} 内）" if within else ""
+                    raise BlockedError(f"表单 {form_id} 里没有字段「{label}」{where}")
                 f = pick_field(self.page, form, hits, occurrence or 0, explicit=occurrence is not None or bool(within))
                 adapter = self._adapter(f.type)
                 root = find_field_root(self.page, form, f)

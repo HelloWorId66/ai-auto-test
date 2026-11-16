@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List
 
-from . import guard
+from . import CORE_VERSION, guard
 from .adapters import build_default_registry
 from .batch import Candidate, duplicate_ids, forms_for, load_candidates, run_batch, select
 from .calibration import CalibrationKey, CalibrationStore, load_probes, run_calibration
@@ -310,10 +310,15 @@ def _calibrate(a, ws: Workspace, registry, bills) -> int:
         sess.login(next(iter(cfg.accounts)))
         rec = RunRecorder(ws.results_dir, cfg.project, cfg.env_name, "calibration")
         prim = Primitives(page, forms, registry, rec, db, bills, nav=sess)
+        total = failed = 0
         for r in run_calibration(prim, probes, store, sess.open_form):
             print(f"{r.type_name}: {'通过' if r.passed else '失败 ' + r.detail}")
+            total += 1
+            failed += not r.passed
         rec.finish("calibration")
-        return 0
+        print(f"标定完成：通过 {total - failed}，失败 {failed}（产品版本 {cfg.product_version}，语言 {cfg.locale}，框架 {CORE_VERSION}）")
+        print(f"标定记录：{store.key.path(ws.results_dir)}")
+        return 1 if failed else 0
     finally:
         sess.close()
         if db:

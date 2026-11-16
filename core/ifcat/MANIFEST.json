@@ -1,6 +1,6 @@
 {
   "files": {
-    "__init__.py": "09a12240b34004c0df99f5bf5457ddd9033d550a10fd2e932b7f18c278361d33",
+    "__init__.py": "45554f5363f6492079c79207600ea1842677081d8307e107d3574e6c52526de4",
     "actions.py": "a5114d8862b29ebcdf7a54416e1aa25f8df50001ab4a1995ceb704c80603b9e1",
     "adapters/__init__.py": "443179e775b09083bb0e60660d9d898414bedf18c41339bd236278ff9ac9249b",
     "adapters/base.py": "32d44b3161ff21ff334730ad68336040dae2c4e1bf8526185ff4b1447cb458e6",
@@ -9,7 +9,7 @@
     "adapters/registry.py": "1cc1d0224d72c5df9f522501d15efb84dd7e33b85790da5839aaec08a1b1f4c3",
     "batch.py": "45721ccbb985688a7ffa086a5b9cda949dac1ca88b8c2d4f9b946eed33573418",
     "calibration.py": "3c5cefc5f401596cda857d716b8d0a9c92e2e2f105dca7e46d8be04c78a83ed2",
-    "cli.py": "16e7a67eb00c8dc978be55e16092791e451fe6868c57d5aa737e9a5ec7b0105c",
+    "cli.py": "436fc9aea02b29e16cd0f9be6c2d5085686710047fbe3e253e14da0e6471159d",
     "config.py": "4a929eacaea34c85a19fe7947d590e4a72d856618d93d32033a7c78b9570527d",
     "dbro.py": "bb017efe7aeba4c982fdad5f21a883240135f3e5e83da9261640bba4adbeb0c1",
     "doctor.py": "c6c6088ff7bbf5633aa25cf4faaa589625b1d8531d5b7838f8f58c112edca2e8",
@@ -26,7 +26,7 @@
     "mcpdb.py": "c40a955c3ca64cf50f103f3be8f99a3f890d90aa4e22ec494473db39183a5f90",
     "meta/__init__.py": "fbd719cf14e0c34aa84e59dc7b9f9add91802a19ac805c7906c40ab682664594",
     "meta/formmeta.py": "20cef0e405f4f8643891c37a5441a1cbd67f28a17378c7cbd9d5b05cd48ab0cb",
-    "primitives.py": "ae1bd5e1d915d0735e174e2bee937fc6b89a7197d80f90f0d1b050ead52937e0",
+    "primitives.py": "899d4e0dc36cbd0f5a5d2f3d8f5db0eabd5e34f45a926ea539fc58f8f089bda9",
     "report.py": "753676e9d3d588a440571e5d819a8c29dd016abcba8314226302d0073583de53",
     "result.py": "802c6f1b6aa75c0557ea9237bd426ae50c4dc7552288e6e87e9b90e16ab3ba2f",
     "review.py": "1698cc04566f3f4d64c80e01f6cc4d725a002e2d736744b056847432e9676d42",
@@ -41,5 +41,5 @@
     "workspace.py": "3c4df12aaccd78fc1bae41c2e6ed8535d29cf359d08304652740bf2617122960",
     "xlsxread.py": "7d5d6aab33c9bd72a964c783d142b018306046efda2f5c540f4b0df718855d27"
   },
-  "version": "0.2.0"
+  "version": "0.2.1"
 }
