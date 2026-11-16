@@ -1,0 +1,33 @@
+README.md
+  s_bf54cd1fb4eb0b::t_ac29ce9bc48472 20,32-44,63,73,81-84,91-94,98-102
+docs/agent-workflow.md
+  s_bf54cd1fb4eb0b::t_6c5fab38b733fc 10,28
+docs/design/公共库接口设计.md
+  s_bf54cd1fb4eb0b::t_9305b3b3dd087e 77-91,120,131
+docs/组件识别方法论.md
+  s_bf54cd1fb4eb0b::t_96f99840671dd3 26
+skills/ifc-autotest/SKILL.md
+  s_bf54cd1fb4eb0b::t_0098c4bc701d1a 34-35,43,54,72,79
+templates/workspace/AGENTS.md
+  s_bf54cd1fb4eb0b::t_7e6520e54dd547 12-13
+templates/workspace/README.md
+  s_bf54cd1fb4eb0b::t_8a5ad88993ac18 6,18-19
+templates/新场景.yaml
+  s_bf54cd1fb4eb0b::t_9a430de9ab710f 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "97254b76f4db9243d8d8fb93b4a0a9d725e38c7e",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
