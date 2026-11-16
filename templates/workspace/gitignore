@@ -1,0 +1,6 @@
+config/local/
+workspace.local.yaml
+results/*
+!results/.gitkeep
+extensions/__pycache__/
+.DS_Store

@@ -1,0 +1,5 @@
+# 工作区：本项目的配置、场景、状态模型、标定探针、扩展与结果。框架本身在单独的仓库，不在这里改。
+project: {project}
+default_env: dev
+bills: []
+probes: []
