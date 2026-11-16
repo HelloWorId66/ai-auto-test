@@ -1,0 +1,19 @@
+# 团队统一的依赖版本（Python 3.12）。升级时由框架维护者统一改这里并跑全部自测。
+# 安装：pip install -r requirements.lock && pip install -e . --no-deps
+playwright==1.65.1
+PyYAML==6.0.3
+greenlet==3.5.6
+typing_extensions==4.16.0
+
+# 数据库只读检查（Oracle）
+oracledb==26.1.0
+cryptography==50.0.2
+cffi==2.1.1
+pycparser==3.12
+
+# 框架自测
+pytest==9.2.0
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+Pygments==2.21.0
