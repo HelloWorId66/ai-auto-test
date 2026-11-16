@@ -1,0 +1,189 @@
+core/ifcat/extloader.py
+  s_e35b9f8fd2f2af::t_7c856a39fc6137 1-36
+.gitignore
+  s_0120fa9186de28::t_e47f06049494aa 1-5
+README.md
+  s_0120fa9186de28::t_ba4489d3a2fc81 1-82
+core/ifcat/MANIFEST.json
+  s_0120fa9186de28::t_eb87d6a18e8c88 1-42
+core/ifcat/__init__.py
+  s_0120fa9186de28::t_d74725676bdd61 1-6
+core/ifcat/adapters/__init__.py
+  s_0120fa9186de28::t_58eab9e592d94d 1-43
+core/ifcat/adapters/base.py
+  s_0120fa9186de28::t_add116dcf0c7ef 1-22
+core/ifcat/adapters/business.py
+  s_0120fa9186de28::t_3969e8fd7fc87b 1-203
+core/ifcat/adapters/generic.py
+  s_0120fa9186de28::t_029bbef3ec024a 1-104
+core/ifcat/adapters/registry.py
+  s_0120fa9186de28::t_27bdb2d9d4f04c 1-55
+core/ifcat/batch.py
+  s_0120fa9186de28::t_9154cd25e5bb22 1-194
+core/ifcat/calibration.py
+  s_0120fa9186de28::t_85f6ddc254557b 1-213
+core/ifcat/cli.py
+  s_0120fa9186de28::t_749bbff13c2dfa 1-286
+core/ifcat/config.py
+  s_0120fa9186de28::t_5680a9ae1dfd7e 1-135
+core/ifcat/dbro.py
+  s_0120fa9186de28::t_cb2403a798f09b 1-105
+core/ifcat/doctor.py
+  s_0120fa9186de28::t_fee28dd02f1bf0 1-139
+core/ifcat/evidence.py
+  s_0120fa9186de28::t_7c7d2b318ccd39 1-86
+core/ifcat/flowops.py
+  s_0120fa9186de28::t_24e8d91e6ff47b 1-171
+core/ifcat/formsnap.py
+  s_0120fa9186de28::t_e48934284a3b9a 1-55
+core/ifcat/grid.py
+  s_0120fa9186de28::t_bee8d7c6874f9e 1-127
+core/ifcat/guard.py
+  s_0120fa9186de28::t_9c5f87966b693a 1-69
+core/ifcat/htmlkit.py
+  s_0120fa9186de28::t_fbb58f542fec61 1-72
+core/ifcat/locator.py
+  s_0120fa9186de28::t_95a604c02f1120 1-123
+core/ifcat/mcpdb.py
+  s_0120fa9186de28::t_0cb61d576c1580 1-135
+core/ifcat/meta/__init__.py
+  s_0120fa9186de28::t_04b939d1601d94 1-11
+core/ifcat/meta/formmeta.py
+  s_0120fa9186de28::t_5da944d3df0686 1-314
+core/ifcat/primitives.py
+  s_0120fa9186de28::t_31aa93156a5c38 1-778
+core/ifcat/report.py
+  s_0120fa9186de28::t_71c5f95d0633a5 1-220
+core/ifcat/result.py
+  s_0120fa9186de28::t_9f8de1de22306a 1-45
+core/ifcat/review.py
+  s_0120fa9186de28::t_90727ee82a4ab5 1-74
+core/ifcat/reviewpage.py
+  s_0120fa9186de28::t_898428c0d765e6 1-234
+core/ifcat/runner.py
+  s_0120fa9186de28::t_cabd7ab67b4e57 1-105
+core/ifcat/scaffold.py
+  s_0120fa9186de28::t_da28b81faa056d 1-86
+core/ifcat/scenario.py
+  s_0120fa9186de28::t_8832a5f60f8a58 1-399
+core/ifcat/selectors.py
+  s_0120fa9186de28::t_13c4341aa9241c 1-46
+core/ifcat/session.py
+  s_0120fa9186de28::t_8fc34f9d571f8b 1-173
+core/ifcat/statemodel.py
+  s_0120fa9186de28::t_8eb7ba2239809f 1-109
+core/ifcat/waits.py
+  s_0120fa9186de28::t_3f4ea31b23b4ba 1-61
+core/ifcat/workspace.py
+  s_0120fa9186de28::t_6fcf068dc27152 1-129
+core/ifcat/xlsxread.py
+  s_0120fa9186de28::t_4ef930199c4d1f 1-90
+docs/agent-workflow.md
+  s_0120fa9186de28::t_a6340edf39e6b9 1-30
+docs/design/公共库接口设计.md
+  s_0120fa9186de28::t_0e1c9615328219 1-122
+docs/design/项目设计v3.md
+  s_0120fa9186de28::t_5fca2d184bf0a3 1-222
+docs/exploration/01-组件全集.md
+  s_0120fa9186de28::t_6ffbfbd10a8d02 1-231
+docs/exploration/02-表单模型.md
+  s_0120fa9186de28::t_7b01cf28370b91 1-256
+docs/exploration/03-流程与查询.md
+  s_0120fa9186de28::t_42fbd827247de8 1-164
+docs/exploration/05-IFC业务组件.md
+  s_0120fa9186de28::t_e891f7a78826cc 1-312
+docs/exploration/06-网格与单元格编辑器.md
+  s_0120fa9186de28::t_14b237239bcfe3 1-259
+docs/exploration/PanUI产品操作规约.md
+  s_0120fa9186de28::t_34a482978860fb 1-80
+docs/exploration/产品基线.md
+  s_0120fa9186de28::t_3daac5c616e875 1-3
+docs/组件识别方法论.md
+  s_0120fa9186de28::t_1b8b22ece0ab91 1-77
+ifc.py
+  s_0120fa9186de28::t_b2bf04f4df9769 1-7
+skills/ifc-autotest/SKILL.md
+  s_0120fa9186de28::t_3057abd0b7dd2f 1-78
+templates/env.config.example.yaml
+  s_0120fa9186de28::t_4f8ac583f47968 1-21
+templates/probes.example.yaml
+  s_0120fa9186de28::t_632b6e99b29977 1-11
+templates/workspace/AGENTS.md
+  s_0120fa9186de28::t_51876b7f60242d 1-12
+templates/workspace/README.md
+  s_0120fa9186de28::t_b20ca065a952ac 1-19
+templates/workspace/env.yaml.example
+  s_0120fa9186de28::t_d731967d8185d2 1-14
+templates/workspace/gitignore
+  s_0120fa9186de28::t_1047cff5762118 1-6
+templates/workspace/workspace.yaml
+  s_0120fa9186de28::t_d7dc5bbc254448 1-5
+templates/新场景.yaml
+  s_0120fa9186de28::t_34d8e80385585c 1-32
+tests/conftest.py
+  s_0120fa9186de28::t_9f96ef2808edaa 1-5
+tests/core/test_browser_locator.py
+  s_0120fa9186de28::t_5ade9fc0df6fcf 1-58
+tests/core/test_business_adapters.py
+  s_0120fa9186de28::t_0085d5cf18a193 1-85
+tests/core/test_calibration.py
+  s_0120fa9186de28::t_7611781d22a6d4 1-99
+tests/core/test_dbro_config_guard.py
+  s_0120fa9186de28::t_f31d26bce6ab58 1-87
+tests/core/test_discover_bill.py
+  s_0120fa9186de28::t_4e260aaf77b223 1-39
+tests/core/test_formmeta.py
+  s_0120fa9186de28::t_cb75b57730d6a8 1-67
+tests/core/test_grid.py
+  s_0120fa9186de28::t_263981d60d5b69 1-51
+tests/core/test_init_doctor.py
+  s_0120fa9186de28::t_39e3f0495c8571 1-67
+tests/core/test_mcpdb.py
+  s_0120fa9186de28::t_e703155ff017c5 1-88
+tests/core/test_new_steps.py
+  s_0120fa9186de28::t_1a6373f75b6a2a 1-57
+tests/core/test_query_and_dates.py
+  s_0120fa9186de28::t_b74e70977eb310 1-87
+tests/core/test_registry_primitives.py
+  s_0120fa9186de28::t_ff6a82fd49c2dc 1-122
+tests/core/test_scenario.py
+  s_0120fa9186de28::t_21e467efe11534 1-138
+tests/core/test_workspace_review.py
+  s_0120fa9186de28::t_577b94e358042d 1-275
+tools/db_mcp.py
+  s_0120fa9186de28::t_d2b663326a5836 1-47
+tools/discover_bill.py
+  s_0120fa9186de28::t_9e631fa328583e 1-139
+tools/kb_query.py
+  s_0120fa9186de28::t_b5431c6290c154 1-43
+tools/propose.py
+  s_0120fa9186de28::t_1bb20c02c7da7b 1-23
+tools/release_manifest.py
+  s_0120fa9186de28::t_14e82f62d40516 1-8
+ui/server.py
+  s_0120fa9186de28::t_3958e5af9bb488 1-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a9f7e8fb66b94d3471242285dee1c9da8a4f3c27",
+  "prompts": {},
+  "sessions": {
+    "s_0120fa9186de28": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "c860488d-483f-46f6-9321-6a8ab97b549e",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    },
+    "s_e35b9f8fd2f2af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1d3b9-0677-78a3-8173-1a273f1b2780",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
