@@ -16,7 +16,7 @@ preconditions:
 roles:
   maker: 制单员
   checker: 复核员
-data:                         # 场景用到的业务数据，步骤里用 ${data.名字} 引用
+data:                         # 场景用到的业务数据，步骤里用 ${data.名字} 引用；日期用 ${today+30} 等，不重复的值用 ${unique}
   amount: "待业务确认"
 steps:
   - {id: s1, as: maker, do: open, 说明: 打开某某单据, args: {form: 表单ID}}

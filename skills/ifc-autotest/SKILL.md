@@ -31,7 +31,8 @@ description: IFC（境外财资管理软件，OSP/PanUI React 表单）业务功
 - **日期**：场景数据里可写 `${today}`、`${today+365}`（天）、`${today+12m}`（月）、`${today-1}`，运行时按当天推算；数据库里的日期列是 `YYYYMMDD`，用 `${today+12m:compact}`。不要把日期写死，否则隔天就过期。
 - **单据头表被多种单据共用**（如授信申请/变更/终止同表，靠单据类型区分）：在 `bills/*.bills.yaml` 的流程里写 `where: {F_DJLX: "30020052"}` 限定。办结后单据编号会变（如授信编号不变但变更单据有自己的编号），用 `capture_db` 从库里取出再用于 `expect_flow_completed`。
 - 只支持 React 表单；GWT 老表单不处理。
-- 动作清单见 `core/ifcat/scenario.py` 的 `STEP_SPECS`；字段标签必须取自表单定义（`knowledge/forms/<表单ID>.json`，可用 `ifc forms import` 导入）。
+- **不重复的数据**：单据不清理，名称、摘要这类重复运行会撞车的数据，用 `${unique}`（每次运行自动生成的 14 位数字，一次运行内不变），如 `名称: 自动化-${unique}`。
+- 动作清单见 `<framework>/core/ifcat/scenario.py` 的 `STEP_SPECS`，加上工作区 `extensions/` 里用 `@action` 声明的扩展动作；字段标签必须取自表单定义（`knowledge/forms/<表单ID>.json`，可用 `ifc forms import` 导入）。
 - 测试数据：用专用测试主体/账户；单据不清理，靠环境定期刷新。用户未指定专用主体前，沿用场景里已有主体并在 `unconfirmed` 标明。
 
 ## 3. 结果判读
@@ -39,7 +40,7 @@ description: IFC（境外财资管理软件，OSP/PanUI React 表单）业务功
 |---|---|---|
 | passed | 检查全部通过 | 汇报 |
 | failed | 检查未通过，系统行为与预期不一致 | 如实上报，附截图；不改预期 |
-| blocked | 自动化没能完成（定位、等待、数据、环境） | 自己排查修复，重跑；修不了才说明原因 |
+| blocked | 自动化没能完成（定位、等待、超时、数据、环境） | 自己排查修复，重跑；修不了才说明原因。排查后确认是系统自己报错或卡住，按疑似产品问题上报 |
 | invalid | 场景没有检查点 | 补检查点 |
 | skipped | 场景未审核，没运行 | 提醒用户审核 |
 
@@ -50,7 +51,7 @@ description: IFC（境外财资管理软件，OSP/PanUI React 表单）业务功
 2. 页面空白/502：本机代理或环境问题（框架默认直连浏览器，不走系统代理）。
 3. 找不到字段/菜单：核对表单定义和 `config/local/<环境>.yaml` 的菜单路径；菜单路径用 `python tools/db_mcp.py entries <表单ID或菜单名>` 取（home=核心系统、ebank=网银，按 home 的为准），它会按菜单编号前缀补全各级父菜单。
 4. 填值无效或被联动清空：见方法论文档"已知坑"。
-5. 缺组件适配器：在工作区 `extensions/` 新增并验证，再用 `tools/propose.py` 提案；**不改框架 `core/`**（改了完整性校验会拒绝运行）。
+5. 框架缺控件适配器或缺动作（如撤回、上传附件）：**不要卡住，也不改框架 `core/`**。在工作区 `extensions/` 里补一个文件，只从 `ifcat.ext` 导入：控件写 `Adapter` 子类；动作写 `@action("名字", required=[...], text="业务说法", checkpoint=True/False)` 修饰的函数 `(ctx, **参数)`，返回 `StepResult.passed/failed/blocked`，`ctx.page` 是页面、`ctx.prim` 可复用内置原语、`ctx.screenshot()` 留截图。选择器必须来自真实页面观察。补完后场景里直接用，完成当次工作；归纳进框架由维护者定期做（`ifc harvest`），不是你的事。
 6. 首次到新环境/新产品版本/新语言：先 `ifc calibrate`。
 
 ## 5. 外部信息源（智能体自行连接，不要让用户装）
@@ -68,11 +69,11 @@ ifc validate --module DP                  离线校验
 ifc render --module DP                    生成 HTML 审核页
 ifc approve <场景>            用户在对话里说"通过"之后才执行
 ifc run <场景> | --module DP | --all [--env dev] [--draft]
-ifc calibrate [--env dev]                 组件标定
+ifc calibrate [--env dev]                 组件标定（换环境、产品版本、界面语言或框架版本后都要重做）
 ifc forms import <表单ID>... --from <目录> --product-version 6.2.7
 python <framework>/ui/server.py --workspace <工作区>   本地简单页面
 ```
 报告：`results/index.html`（历史索引）→ `results/runs/<项目>/<环境>/<批次>/report.html`。
 
 ## 7. 边界
-- 数据库只读；不改框架 `core/`；不替用户审批；不把口令写进场景、日志、报告；不对生产环境运行。
+- 数据库只读；不改框架 `core/`（缺东西在工作区 `extensions/` 补）；不替用户审批；不把口令写进场景、日志、报告；不对生产环境运行。

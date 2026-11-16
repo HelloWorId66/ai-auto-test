@@ -3,7 +3,7 @@
 IFC AI 自动化测试的项目工作区（框架在单独的仓库，不在这里改）。
 
 ## 第一次使用（每个人本机各做一次）
-1. 从 GitLab 拉取**框架仓库**，按其 README 准备 Python 环境（`python -m venv .venv`，安装 `playwright pyyaml`，执行 `python -m playwright install chromium`；Oracle 数据库检查再装 `oracledb`）。
+1. 从 GitLab 拉取**框架仓库**，按其 README「开发框架」一节准备 Python 环境。
 2. 拉取本工作区。
 3. 在 `config/local/<环境>.yaml` 填环境地址、账号、口令（该目录不入库）。可参考 `config/local/dev.yaml.example`。
 4. 在 `workspace.local.yaml` 写 `framework: <本机框架目录>`（不入库）。
@@ -15,5 +15,6 @@ IFC AI 自动化测试的项目工作区（框架在单独的仓库，不在这�
 - `reviews/`：给业务人员审核的 HTML 审核页。
 - `results/`：运行结果（不入库）。`results/index.html` 是历史索引，每次运行单独一个批次目录，永不覆盖。
 - `knowledge/`：模块知识、需求、环境观察、表单定义快照（`knowledge/forms`）。
-- `bills/`、`probes/`、`extensions/`：单据状态模型、组件标定探针、本项目扩展。
+- `bills/`、`probes/`：单据状态模型、组件标定探针。
+- `extensions/`：框架还没有的控件适配器、动作，在这里临时补上先完成工作；框架维护者会定期归纳。
 - `.claude/skills/ifc-autotest/`：智能体规程（由 `ifc init --refresh` 从框架同步，勿手改）。

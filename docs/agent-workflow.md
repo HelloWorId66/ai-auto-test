@@ -7,7 +7,7 @@
 ## 写一个新场景
 1. 确认业务和流程：读工作区 `knowledge/modules/README.md` 的接入步骤，需求放 `knowledge/requirements/`。没有证据（代码、配置、实际界面、业务确认）的内容标「未确认」，不推断。
 2. 状态模型：`python tools/discover_bill.py` 生成骨架，写入工作区 `bills/*.bills.yaml` 并在 `workspace.yaml` 的 `bills` 登记，结果表需读 `processSubmitToEnd` 补充。
-3. 复制框架 `templates/新场景.yaml` 到工作区 `scenarios/<模块>/`，只用 `STEP_SPECS` 里的动作。字段标签必须取自表单定义。
+3. 复制框架 `templates/新场景.yaml` 到工作区 `scenarios/<模块>/`，只用 `STEP_SPECS` 里的动作和工作区扩展动作。字段标签必须取自表单定义。
 4. 每个场景至少一个检查点（`expect_*`）。只写核心生产场景（含必要的核心异常），不写边界值和冒烟。
 5. 离线校验：`python ifc.py --workspace <工作区> validate <场景>`。
 6. 生成 HTML 审核页：`python ifc.py --workspace <工作区> render <场景>`。场景里要填 `goal`（保证什么）、`source`（依据）、`unconfirmed`（没证据的内容）、`labels`（技术字段名对应的业务名称）。**把审核页交给业务人员，等待对话里的明确答复**。
@@ -25,6 +25,6 @@
 
 ## 边界
 - 数据库只读；口令写在工作区 `config/local/<环境>.yaml`（不入库）或用 `password_env`，不进场景、日志、结果。
-- 不修改框架 `core/`。缺适配器时在工作区 `extensions/` 新增，验证后用 `python tools/propose.py` 生成提案，由维护者审核合入框架。
+- 不修改框架 `core/`。缺控件适配器或缺动作时在工作区 `extensions/` 新增（见 README「框架缺东西时」），先完成当次工作；并入框架由维护者定期用 `ifc harvest` 归纳，也可以用 `python tools/propose.py` 主动提案。
 - 只支持 React 表单。
 - 登录方式、菜单路径、状态值没有真实页面证据前不写死，向用户确认或自己探查真实页面。
