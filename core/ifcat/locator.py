@@ -68,8 +68,24 @@ def _compmark_root(page: Any, form: FormMeta, field: FieldMeta) -> Any:
     return loc if loc.count() == 1 else None
 
 
+_INPUT_ID_TYPES = ("FormTextInput", "FormNumberInput", "FormTextArea")
+
+
+def _input_id_root(page: Any, form: FormMeta, field: FieldMeta) -> Any:
+    """文本类输入框自身的 id 是 ${formID}-${key}-form（真实页面 V6.2.7 实测）。
+    可编辑的文本框不带 FormTextInput 类名（只有禁用的才带），所以不能靠类名找，按 id 找最稳。"""
+    if field.type not in _INPUT_ID_TYPES:
+        return None
+    base = f"{form.form_id}-{field.key}-form"
+    loc = page.locator(f'input[id="{base}"], textarea[id="{base}"]')
+    return loc.locator("xpath=..") if loc.count() == 1 else None
+
+
 def find_field_root(page: Any, form: FormMeta, field: FieldMeta) -> Any:
     hit = _compmark_root(page, form, field)
+    if hit is not None:
+        return hit
+    hit = _input_id_root(page, form, field)
     if hit is not None:
         return hit
     if field.type in COMPMARK_CONTAINER_TYPES:

@@ -8,6 +8,8 @@
   approve <场景>            记录业务审核通过（只能在业务人员明确同意后执行）
   run <场景>|--module M|--all --env   运行一个批次，生成 HTML 报告；只运行已审核的场景，--draft 仅供调试
   calibrate --env 环境                用真实页面标定组件适配器
+  forms import <表单ID>... --from-env 从被测环境读取表单定义
+  view <表单ID> --env 环境            只看不动地查看真实表单：字段是否显示、能否填、默认值、可用按钮
   harvest <工作区>...                 汇总各工作区临时补的扩展，供维护者定期归纳（只读）
 
 模块可以写多个，逗号分隔，如 --module DP,LM。
@@ -53,8 +55,8 @@ def _env_name(a: argparse.Namespace, ws: Workspace) -> str:
 
 def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="ifc", description="IFC AI 自动化测试框架")
-    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "init", "doctor", "harvest"])
-    ap.add_argument("target", nargs="?", help="场景（文件、相对路径或名字）")
+    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "view", "init", "doctor", "harvest"])
+    ap.add_argument("target", nargs="?", help="场景（文件、相对路径或名字）；view 时是表单 ID")
     ap.add_argument("rest", nargs="*", help="forms import 时的表单 ID；harvest 时的其他工作区目录")
     ap.add_argument("--out", help="harvest 的输出文件（不给则打印）")
     ap.add_argument("--from", dest="src", help="forms import 的来源：产品表单定义目录")
@@ -141,6 +143,8 @@ def _dispatch(a: argparse.Namespace) -> int:
 
     if a.command == "forms":
         return _forms(a, ws)
+    if a.command == "view":
+        return _view(a, ws, registry)
 
     bills = _bills(ws)
 
@@ -306,6 +310,29 @@ def _run(a, ws: Workspace, scope: str, cands: List[Candidate], registry, bills) 
     if counts["passed"] + counts["failed"] + counts["blocked"] + counts["invalid"] == 0:
         return 3
     return 0 if counts["passed"] == len(sc) - counts["skipped"] else 1
+
+
+def _view(a, ws: Workspace, registry) -> int:
+    from .pageview import view_form
+    from .result import BlockedError
+    from .session import Session
+
+    if not a.target:
+        print("用法：ifc view <表单ID> [--env <环境>]", file=sys.stderr)
+        return 2
+    cfg = load_config(ws.env_config(_env_name(a, ws)))
+    form = load_form_file(find_form_file(a.target, ws.form_dirs))
+    sess = Session(cfg, headless=not a.headed)
+    try:
+        sess.start()
+        sess.login(next(iter(cfg.accounts)))
+        print(view_form(sess, form, registry, ws.results_dir / "view"))
+        return 0
+    except BlockedError as exc:
+        print(f"没能打开表单：{exc}", file=sys.stderr)
+        return 1
+    finally:
+        sess.close()
 
 
 def _calibrate(a, ws: Workspace, registry, bills) -> int:

@@ -2,10 +2,17 @@
 # 每条探针：在 form 这张表单里，对 label 字段填 value，再读回比较 expect（不写则与 value 相同）。
 # 同一组件类型只要有一条探针失败，该类型就记为标定失败。
 # 选探针字段的原则：用没有业务副作用、可重复改写的字段；下拉类的 value 必须是该环境里真实存在的选项。
+# 只给场景用到的控件类型写探针；按页面联动的先后顺序写（先填会影响别的字段的）。
 probes:
   - {type: FormTextInput,     form: FORM_ID, label: 字段标签, value: "示例文本"}
+  # 系统自动生成、不能填的字段（单据编号等）：只验证能读
+  - {type: FormTextInput,     form: FORM_ID, label: 单据编号, read_only: true}
   - {type: FormDateField,     form: FORM_ID, label: 字段标签, value: "2026-01-01"}
+  # 读回的格式和填的不一样时用 expect（金额带千分位、利率补零）
+  - {type: AmountComp,        form: FORM_ID, label: 字段标签, value: "HKD 1000", expect: "HKD 1,000.00"}
   - {type: InterestRateInput, form: FORM_ID, label: 字段标签, value: "3", expect: "3.00"}
   - {type: HelpComboBox,      form: FORM_ID, label: 字段标签, value: "该环境里存在的选项"}
   # 网格单元格：type 写 GridCell:<编辑器码>（1 文本、3 数值、5 日期、6/21 下拉、7 字典帮助；30 框架不带，需在 extensions/ 里补）
   - {type: "GridCell:1", form: FORM_ID, grid: 网格key, label: 列表头, value: "示例", add_button: "增加分录"}
+  # 表格里系统已带出的行：不点新增，直接填已有行
+  - {type: "GridCell:3", form: FORM_ID, grid: 网格key, label: 列表头, value: "100", existing: true}

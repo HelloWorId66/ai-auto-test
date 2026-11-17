@@ -1,6 +1,7 @@
 config/local/
 workspace.local.yaml
 results/*
+tmp/
 !results/.gitkeep
 extensions/__pycache__/
 .DS_Store
