@@ -58,7 +58,8 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("rest", nargs="*", help="forms import 时的表单 ID；harvest 时的其他工作区目录")
     ap.add_argument("--out", help="harvest 的输出文件（不给则打印）")
     ap.add_argument("--from", dest="src", help="forms import 的来源：产品表单定义目录")
-    ap.add_argument("--product-version", help="forms import 的产品版本，如 6.2.7")
+    ap.add_argument("--from-env", action="store_true", help="forms import 的来源：登录被测环境读取（环境上实际部署的版本）")
+    ap.add_argument("--product-version", help="forms import 的产品版本，如 6.2.7；--from-env 时默认取环境配置里的 product_version")
     ap.add_argument("--module", help="模块代号，如 DP；多个用逗号分隔")
     ap.add_argument("--all", action="store_true", help="全部场景")
     ap.add_argument("--workspace", help="工作区目录；也可用环境变量 IFCAT_WORKSPACE")
@@ -180,23 +181,35 @@ def _dispatch(a: argparse.Namespace) -> int:
 
 
 def _forms(a: argparse.Namespace, ws: Workspace) -> int:
-    from .formsnap import SnapshotError, import_forms, list_snapshots
+    from .config import ConfigError
+    from .formsnap import SnapshotError, import_forms, import_forms_from_env, list_snapshots
 
     if a.target == "list":
         for fid, m in list_snapshots(ws).items():
             print(f"{fid}\t产品版本 {m['product_version']}\t{m['source']}\t{m['imported_at']}")
         return 0
     if a.target == "import":
-        if not (a.src and a.rest):
-            print("用法：ifc forms import <表单ID>... --from <表单定义目录> --product-version <版本>", file=sys.stderr)
+        if not (a.rest and (a.src or a.from_env)) or (a.src and a.from_env):
+            print("用法：ifc forms import <表单ID>... --from-env [--env <环境>]（从被测环境读取）\n"
+                  "  或：ifc forms import <表单ID>... --from <产品表单定义目录> --product-version <版本>", file=sys.stderr)
             return 2
         try:
-            done = import_forms(ws, Path(a.src).expanduser(), a.rest, a.product_version or "", "本地产品表单定义目录导入")
-        except SnapshotError as exc:
+            if a.from_env:
+                cfg = load_config(ws.env_config(_env_name(a, ws)))
+                done, missing = import_forms_from_env(ws, cfg, a.rest, a.product_version or "")
+            else:
+                done, missing = import_forms(ws, Path(a.src).expanduser(), a.rest, a.product_version or "",
+                                             "本地产品表单定义目录导入"), {}
+        except (SnapshotError, ConfigError) as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        print(f"已导入 {len(done)} 个表单定义到 {ws.forms_dir}：{', '.join(done)}")
-        return 0
+        if done:
+            print(f"已导入 {len(done)} 个表单定义到 {ws.forms_dir}：{', '.join(done)}")
+        for fid, why in missing.items():
+            print(f"没有取到 {fid}：{why}", file=sys.stderr)
+        if missing:
+            print("请核对表单 ID（ifc tool db_mcp entries <菜单名> 可以查），以及这个环境是否部署了该功能。", file=sys.stderr)
+        return 1 if missing else 0
     print("forms 子命令：import、list", file=sys.stderr)
     return 2
 

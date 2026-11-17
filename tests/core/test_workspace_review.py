@@ -273,3 +273,55 @@ def test_form_snapshots_import_list_and_validate_without_product_source(ws_root,
     (src / "BAD.json").write_text("{坏的", encoding="utf-8")
     assert main(_args(ws_root, "forms", "import", "BAD", "--from", str(src), "--product-version", "6.2.7")) == 2
     assert not (ws_root / "knowledge" / "forms" / "BAD.json").exists()
+
+
+def _env_cfg(ws_root, version_line='product_version: "6.2.7"\n'):
+    cfgdir = ws_root / "config" / "local"
+    cfgdir.mkdir(parents=True)
+    (cfgdir / "dev.yaml").write_text("project: demo\nenv_name: dev\n" + version_line
+                                     + "base_url: http://x\naccounts:\n  maker: {username: u, password: p}\n", encoding="utf-8")
+
+
+def test_form_snapshots_import_from_env(ws_root, capsys, monkeypatch):
+    from ifcat import formsnap
+
+    text = json.dumps(FORM, ensure_ascii=False)
+    monkeypatch.setattr(formsnap, "fetch_from_env", lambda cfg, ids: (
+        {i: text for i in ids if i == "DEMO_FORM"}, {i: "当前表单文件没有找到！" for i in ids if i != "DEMO_FORM"}))
+    monkeypatch.setattr(formsnap.import_forms_from_env, "__defaults__", (formsnap.fetch_from_env,))
+    (ws_root / "forms" / "DEMO_FORM.json").unlink()
+    (ws_root / "workspace.yaml").write_text("project: demo\n", encoding="utf-8")
+    _env_cfg(ws_root)
+    assert main(_args(ws_root, "forms", "import", "DEMO_FORM", "--from-env", "--from", "x")) == 2  # 来源只能选一个
+    assert main(_args(ws_root, "forms", "import", "DEMO_FORM", "NOPE", "--from-env", "--env", "dev")) == 1
+    err = capsys.readouterr().err
+    assert "没有取到 NOPE" in err and "没有找到" in err
+    index = yaml.safe_load((ws_root / "knowledge" / "forms" / "_index.yaml").read_text(encoding="utf-8"))["forms"]
+    assert list(index) == ["DEMO_FORM"]
+    assert index["DEMO_FORM"]["product_version"] == "6.2.7" and index["DEMO_FORM"]["source"] == "从被测环境 dev 读取"
+    assert "http://x" not in json.dumps(index)  # 索引里不能出现环境地址
+    assert main(_args(ws_root, "validate", "演示")) == 0
+
+
+def test_form_snapshots_from_env_needs_product_version(ws_root, monkeypatch):
+    from ifcat import formsnap
+
+    monkeypatch.setattr(formsnap.import_forms_from_env, "__defaults__", (lambda cfg, ids: pytest.fail("不应连接环境"),))
+    _env_cfg(ws_root, "")
+    assert main(_args(ws_root, "forms", "import", "DEMO_FORM", "--from-env", "--env", "dev")) == 2
+
+
+def test_parse_loadjson_reply():
+    from ifcat.formsnap import SnapshotError, parse_loadjson
+
+    text = json.dumps(FORM, ensure_ascii=False)
+    assert parse_loadjson("DEMO_FORM", 200, json.dumps({"code": 1, "data": text})) == text
+    for status, body, hint in [
+        (200, json.dumps({"code": 0, "message": "当前表单文件没有找到！"}), "没有找到"),
+        (302, "", "HTTP 302"),
+        (200, "<html>登录</html>", "不是 JSON"),
+        (200, json.dumps({"code": 1, "data": "{}"}), "不是可识别的表单定义"),
+        (200, json.dumps({"code": 1, "data": text}), "另一个表单"),
+    ]:
+        with pytest.raises(SnapshotError, match=hint):
+            parse_loadjson("OTHER" if hint == "另一个表单" else "DEMO_FORM", status, body)

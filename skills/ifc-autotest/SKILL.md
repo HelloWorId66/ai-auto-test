@@ -85,7 +85,7 @@ ifc render <场景> | --module DP | --all                生成 HTML 审核页�
 ifc approve <场景>                                     用户说"通过"之后才执行
 ifc run <场景> | --module DP,LM | --all [--env dev] [--draft]
 ifc calibrate [--env dev]                              组件标定
-ifc forms import <表单ID>... --from <目录> --product-version 6.2.7
+ifc forms import <表单ID>... --from-env [--env dev]     从被测环境读取表单定义
 ifc forms list                                         已导入的表单定义
 ifc ui --workspace <工作区>                            本地运行页面
 ifc tool db_mcp|kb_query|discover_bill <参数>          查资料的辅助工具，见 references/查资料.md

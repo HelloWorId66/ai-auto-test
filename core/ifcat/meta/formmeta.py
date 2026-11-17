@@ -311,4 +311,5 @@ def find_form_file(form_id: str, search_dirs: Iterable[str | Path]) -> Path:
         tried.append(str(cand))
         if cand.is_file():
             return cand
-    raise FormMetaError(f"找不到表单 {form_id}，已尝试：{tried}")
+    raise FormMetaError(f"找不到表单 {form_id}，已尝试：{tried}。"
+                        f"可以用 ifc forms import {form_id} --from-env 从被测环境读取")
