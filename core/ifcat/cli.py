@@ -66,7 +66,7 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--by", help="审核人（approve 用）")
     ap.add_argument("--draft", action="store_true", help="允许运行未审核的场景（仅调试，结果标记为未审核）")
     ap.add_argument("--project", help="init 时的项目名")
-    ap.add_argument("--refresh", action="store_true", help="init 时只同步智能体规程（SKILL）到已有工作区")
+    ap.add_argument("--refresh", action="store_true", help="init 时只给已有工作区补上缺少的说明文件")
     ap.add_argument("--login", action="store_true", help="doctor 时实际登录一次，验证账号口令")
     ap.add_argument("--headed", action="store_true")
     ap.add_argument("--skip-integrity", action="store_true", help="跳过核心库完整性校验（仅开发期）")
@@ -91,10 +91,10 @@ def _select(a: argparse.Namespace, ws: Workspace):
 
 
 def _init(a: argparse.Namespace) -> int:
-    from .scaffold import InitError, init_workspace
+    from .scaffold import InitError, init_workspace, old_skill_copy
 
     if not a.target or not (a.project or a.refresh):
-        print("用法：ifc init <工作区目录> --project <项目名>；更新规程：ifc init <工作区目录> --refresh", file=sys.stderr)
+        print("用法：ifc init <工作区目录> --project <项目名>；给已有工作区补说明文件：ifc init <工作区目录> --refresh", file=sys.stderr)
         return 2
     try:
         project = a.project
@@ -104,7 +104,10 @@ def _init(a: argparse.Namespace) -> int:
     except InitError as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    print(("已同步：" if a.refresh else "已创建：") + ("、".join(done) if done else "（没有变化）"))
+    print(("已补上：" if a.refresh else "已创建：") + ("、".join(done) if done else "（没有变化）"))
+    old = old_skill_copy(a.target)
+    if old:
+        print(f"提示：{old} 是旧版本留下的规程副本，已不再更新。规程现在随 ifc-autotest 技能分发，这个目录可以删除。")
     if not a.refresh:
         print("下一步：复制 config/local/dev.yaml.example 为 dev.yaml 并填写，然后运行 ifc doctor --login")
     return 0

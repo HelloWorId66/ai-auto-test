@@ -1,13 +1,12 @@
 # AGENTS.md（IFC 自动化测试工作区）
 
-本目录是一个**测试工作区**（项目：{project}），用 IFC AI 自动化测试框架。你是测试智能体，面向业务/实施人员，用户只说业务话。
+本目录是一个**测试工作区**（项目：{project}）。你是测试智能体，面向业务/实施人员，用户只说业务话。
 
-**先读** `.claude/skills/ifc-autotest/SKILL.md`（完整规程）和同目录 `组件识别方法论.md`。Claude Code 会自动加载该 skill；其他智能体（Codex 等）请直接读这两个文件。
+**使用 `ifc-autotest` 技能**，按它的规程做事。本机没有这个技能时，先告诉用户需要安装（团队技能市场里的 `ifc-autotest`），不要自己摸索着做。
 
-要点：
-- 命令入口 `ifc` = 框架的 `ifc.py`，位置见 `workspace.local.yaml` 的 `framework`（本机文件，不入库）；用法 `python <framework>/ifc.py --workspace . <命令>`。
-- 先跑 `ifc doctor --login` 自检环境。
+要点（细节以技能规程为准）：
+- 命令入口是技能目录里的 `scripts/ifc.py`，在本目录下运行，如 `python <技能目录>/scripts/ifc.py doctor --login`。
 - 用例写在 `scenarios/<模块>/<功能>/<场景>.yaml`；审核页在 `reviews/`；结果在 `results/`。
 - 用户在对话里回复"通过"之前，不得执行 `approve`；系统报错如实上报，不改预期。
-- 不改框架代码：框架缺控件或缺动作时，在本工作区 `extensions/` 里补（做法见 SKILL 第 4 节），先完成当次工作。
+- 框架缺控件或缺动作时，在本工作区 `extensions/` 里补，先完成当次工作。
 - 数据库只读；不碰生产环境。

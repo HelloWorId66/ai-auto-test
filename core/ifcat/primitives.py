@@ -166,6 +166,13 @@ class Primitives:
         self.rec.record_step(name, result)
         return result
 
+    def _grid_extension(self, type_name: str) -> Optional[Adapter]:
+        source = self.registry.extension_source(type_name)
+        if source is None:
+            return None
+        self.rec.note_extension("adapter", type_name, source)
+        return self.registry.get(type_name)
+
     def _adapter(self, type_name: str) -> Adapter:
         adapter = self.registry.get(type_name)
         source = self.registry.extension_source(type_name)
@@ -736,7 +743,8 @@ class Primitives:
             for n, row in enumerate(rows):
                 idx = n if existing else grid_mod.add_row(self.page, root, add_button)
                 for name, value in row.items():
-                    grid_mod.set_cell(self.page, root, idx, grid_mod.find_column(meta, name), value, self.gate)
+                    grid_mod.set_cell(self.page, root, idx, grid_mod.find_column(meta, name), value, self.gate,
+                                      self._grid_extension)
                 for name, value in row.items():
                     col = grid_mod.find_column(meta, name)
                     actual = grid_mod.read_cell(root, idx, col)

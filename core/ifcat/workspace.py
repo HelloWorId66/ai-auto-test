@@ -57,7 +57,7 @@ class Workspace:
     def env_config(self, env: str) -> Path:
         p = self.root / "config" / "local" / f"{env}.yaml"
         if not p.is_file():
-            raise WorkspaceError(f"找不到环境配置：{p}（可参考框架 templates/env.config.example.yaml）")
+            raise WorkspaceError(f"找不到环境配置：{p}（复制同目录的 dev.yaml.example 后填写）")
         return p
 
     def envs(self) -> List[str]:

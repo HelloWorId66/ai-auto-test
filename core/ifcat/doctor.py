@@ -37,13 +37,13 @@ def _browser() -> Check:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        return Check("浏览器自动化组件", False, "没有安装 playwright", "在框架的虚拟环境里执行：pip install playwright pyyaml")
+        return Check("浏览器自动化组件", False, "没有安装 playwright", "重新准备运行环境：python <技能目录>/scripts/ifc.py setup --force")
     try:
         with sync_playwright() as p:
             b = p.chromium.launch(headless=True)
             b.close()
     except Exception as exc:
-        return Check("浏览器自动化组件", False, str(exc).splitlines()[0][:120], "执行：python -m playwright install chromium")
+        return Check("浏览器自动化组件", False, str(exc).splitlines()[0][:120], "重新准备运行环境：python <技能目录>/scripts/ifc.py setup --force")
     return Check("浏览器自动化组件", True, "Chromium 可启动")
 
 
@@ -110,7 +110,7 @@ def _login(cfg: EnvConfig) -> Check:
 def _scenarios(ws: Workspace) -> Check:
     files = ws.scenario_files()
     return Check("场景文件", bool(files), f"{len(files)} 个" if files else "工作区 scenarios/ 下没有场景",
-                 "" if files else "让智能体按「用例生成规程」先写用例草案")
+                 "" if files else "对智能体用业务话说要测什么，由它先写用例")
 
 
 def run_doctor(workspace: Optional[str], env: Optional[str], login: bool = False) -> int:

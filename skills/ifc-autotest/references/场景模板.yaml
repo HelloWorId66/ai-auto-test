@@ -1,0 +1,31 @@
+# 场景模板。业务人员审的是由本文件渲染出的 HTML 审核页（ifc render 本文件）。
+# 每个场景至少要有一个检查点，否则判为无效。各字段和动作的说明见同目录「写场景.md」。
+id: 模块代号-功能简称-场景简称    # 例如 DP-定存存入-一般定期转活期；整个工作区内必须唯一
+title: 场景标题（业务语言）
+module: DP
+feature: 功能名称             # 例如 企业定存存入；不写时取所在目录名
+kind: 主流程                  # 主流程 / 核心异常
+requirement: ""               # 增量需求填需求编号
+goal: 这个场景要保证什么（一两句业务语言）
+source:                       # 依据：需求、设计、禅道用例、真实页面观察
+  - 依据来源
+unconfirmed:                  # 还没有证据的内容，审核页会标红请业务确认；没有就删掉
+  - 待确认的业务规则或数据
+labels:                       # 技术名 -> 业务名称，只用于审核页和报告显示
+  bill_no: 单据编号
+preconditions:
+  - 前提条件（业务语言，例如：存在可用的存款方、存款类型）
+roles:
+  maker: 制单员
+  checker: 复核员
+data:                         # 步骤里用 ${data.名字} 引用；日期用 ${today+30} 等；不重复的值用 ${unique}
+  amount: "待业务确认"
+steps:
+  - {id: s1, as: maker, do: open, 说明: 打开某某单据, args: {form: 表单ID}}
+  - {id: s2, as: maker, do: fill, 说明: 填写主要信息, args: {form: 表单ID, values: {字段标签: "${data.amount}"}}}
+  - {id: c1, as: maker, do: expect_field, 说明: 某个自动算出的值符合业务规则, args: {form: 表单ID, label: 字段标签, expected: "由输入和规则推出的值"}}
+  - {id: s3, as: maker, do: save, 说明: 保存, args: {form: 表单ID}}
+  - {id: s4, as: maker, do: capture_field, 说明: 记录系统生成的单据编号, args: {form: 表单ID, label: 单据编号, name: bill_no}}
+  - {id: s5, as: maker, do: submit, 说明: 提交审批, args: {form: 表单ID}}
+  - {id: s6, as: checker, do: approve, 说明: 复核员在待办里同意, args: {bill: "${captured.bill_no}"}}
+  - {id: c2, as: checker, do: expect_flow_completed, 说明: 单据出现在「已完成」且不在待办, args: {bill: "${captured.bill_no}"}}

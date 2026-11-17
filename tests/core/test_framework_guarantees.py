@@ -237,3 +237,29 @@ def test_review_page_renders_incomplete_step():
         "steps": [{"id": "c1", "as": "maker", "do": "expect_field", "args": {"form": "F1", "label": "状态"}}],
     })
     assert "参数不完整" in render_review_html(sc, ReviewState("unreviewed"))
+
+
+def test_grid_cell_without_builtin_adapter_can_be_supplied_by_workspace_extension():
+    from types import SimpleNamespace
+
+    from ifcat import grid
+    from ifcat.result import BlockedError
+
+    done = []
+
+    class Cell:
+        def count(self):
+            return 1
+
+        def click(self):
+            done.append("click")
+
+    root = SimpleNamespace(locator=lambda sel: Cell())
+    col = SimpleNamespace(header="帮助列", key="C1", editor_type="30", editable=True)
+    with pytest.raises(BlockedError, match="GridCell:30"):
+        grid.set_cell(None, root, 0, col, "x")
+
+    adapter = SimpleNamespace(set=lambda page, cell, value: done.append(value))
+    asked = []
+    grid.set_cell(None, root, 0, col, "x", extension=lambda name: asked.append(name) or adapter)
+    assert asked == ["GridCell:30"] and done == ["click", "x"]

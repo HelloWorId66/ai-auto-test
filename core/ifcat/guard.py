@@ -66,4 +66,5 @@ def verify_integrity(pkg_dir: Path = _PKG_DIR) -> None:
         if name not in exp_files:
             problems.append(f"多出：{name}")
     if problems:
-        raise IntegrityError("核心库完整性校验失败，拒绝运行：" + "；".join(problems))
+        raise IntegrityError("；".join(problems) + "。引擎文件不能改：缺控件或动作请在工作区 extensions/ 里补；"
+                             "不是有意改动的话，请重新安装技能")

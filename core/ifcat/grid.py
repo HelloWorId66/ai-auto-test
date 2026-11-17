@@ -3,12 +3,13 @@
 依据 docs/exploration/06-网格与单元格编辑器.md，全部选择器来自源码，未在真实页面验证：
 - 容器类 ${formID}-${网格key}-form-pan-grid；行 .osp-row；单元格 .osp-cell[col-id=列key]
 - 新增行点工具栏「增加分录」类按钮（按钮文字因表单而异，由场景的 add_button 给出）
-- 单元格编辑器码 1/3/5/6/21 复用通用适配器，7（字典帮助）已在真实页面验证，30（自定义表单帮助）没有证据，一律阻塞
+- 单元格编辑器码 1/3/5/6/21 复用通用适配器，7（字典帮助）已在真实页面验证，30（自定义表单帮助）没有证据，框架不带；
+  框架没有的编辑器码可由工作区扩展补（适配器 type_name 写 GridCell:<编辑器码>）
 新增行的位置（首/尾）未确认，所以填完后一定读回比较，位置不对会被发现而不是悄悄通过。
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from . import waits
 from .adapters.base import Adapter
@@ -89,13 +90,15 @@ def add_row(page: Any, root: Any, add_button: str) -> int:
     return before
 
 
-def set_cell(page: Any, root: Any, row_index: int, col: GridColumnMeta, value: Any, gate: Any = None) -> None:
+def set_cell(page: Any, root: Any, row_index: int, col: GridColumnMeta, value: Any, gate: Any = None,
+             extension: Optional[Callable[[str], Optional[Adapter]]] = None) -> None:
+    """extension：按类型名（GridCell:<编辑器码>）取工作区扩展适配器，框架自带的没有时才用。"""
     code = col.editor_type
-    if code in UNSUPPORTED:
-        raise BlockedError(f"列「{col.header}」编辑器码 {code}：{UNSUPPORTED[code]}")
-    adapter = _CELL_ADAPTERS.get(code)
+    adapter = _CELL_ADAPTERS.get(code) or (extension(cell_type_name(col)) if extension else None)
     if adapter is None:
-        raise BlockedError(f"列「{col.header}」编辑器码 {code} 没有适配器")
+        why = UNSUPPORTED.get(code, "没有适配器")
+        raise BlockedError(f"列「{col.header}」编辑器码 {code}：{why}。可在工作区 extensions/ 里补一个 "
+                           f"type_name 为 {cell_type_name(col)} 的适配器")
     if gate is not None:
         problem = gate.problem(cell_type_name(col))
         if problem:
