@@ -1,0 +1,35 @@
+core/ifcat/MANIFEST.json
+  s_bf54cd1fb4eb0b::t_299bba47db63ca 3,12,20,28,44
+core/ifcat/__init__.py
+  s_bf54cd1fb4eb0b::t_c9fab8a2520c00 6
+core/ifcat/cli.py
+  s_bf54cd1fb4eb0b::t_02bce4d6e98507 61-62,184-185,192-194,197-203,206-212
+core/ifcat/formsnap.py
+  s_bf54cd1fb4eb0b::t_14d2ec5c6345ec 3-7,15,19,23,39-52,57,63-143
+core/ifcat/meta/formmeta.py
+  s_bf54cd1fb4eb0b::t_27f2c3a99e1e38 314-315
+skills/ifc-autotest/SKILL.md
+  s_bf54cd1fb4eb0b::t_0bcbb9f689ef28 88
+skills/ifc-autotest/references/查资料.md
+  s_bf54cd1fb4eb0b::t_9140c0a5e722b2 10,19,23,25-28,52
+skills/ifc-autotest/references/识别页面.md
+  s_bf54cd1fb4eb0b::t_999195bcde74bc 9
+tests/core/test_workspace_review.py
+  s_bf54cd1fb4eb0b::t_a06302b95527a4 276-327
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "01bc6ec47480786d0089850292c255a10e2dbecf",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
