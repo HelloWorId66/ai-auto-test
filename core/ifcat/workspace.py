@@ -18,6 +18,7 @@ from . import CORE_VERSION
 WORKSPACE_FILE = "workspace.yaml"
 LOCAL_FILE = "workspace.local.yaml"
 ENV_VAR = "IFCAT_WORKSPACE"
+DESIGN_FILE = "用例设计.yaml"  # 和场景文件放在同一个功能目录里，但它不是场景，不被引擎执行
 FORMS_SNAPSHOT_DIR = "knowledge/forms"  # 表单定义快照，随工作区入库，运行期只读这里，不依赖产品源码
 
 
@@ -78,7 +79,8 @@ class Workspace:
         raise WorkspaceError(f"找不到场景：{target}")
 
     def scenario_files(self) -> List[Path]:
-        return sorted(p for p in self.scenarios_dir.rglob("*.yaml") if not p.name.endswith(".review.yaml"))
+        return sorted(p for p in self.scenarios_dir.rglob("*.yaml")
+                      if not p.name.endswith(".review.yaml") and p.name != DESIGN_FILE)
 
 
 def _expand(raw: Any, base: Path) -> List[Path]:

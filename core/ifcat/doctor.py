@@ -95,11 +95,14 @@ def _login(cfg: EnvConfig) -> Check:
     try:
         sess.start()
         done: List[str] = []
+        title = ""
         for role in cfg.accounts:
             sess.fresh_context()
             sess.login(role)
             done.append(role)
-        return Check("账号登录", True, "、".join(done) + " 均可登录")
+            title = title or " ".join(sess.page.title().split())[:80]
+        note = f"；登录后的页面标题：{title}（product_version 填其中的版本号）" if title else ""
+        return Check("账号登录", True, "、".join(done) + " 均可登录" + note)
     except Exception as exc:
         return Check("账号登录", False, f"{type(exc).__name__}: {exc}".splitlines()[0][:140],
                      "核对账号口令、界面语言（locale）和 env_params.login 配置")

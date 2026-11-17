@@ -202,7 +202,7 @@ def _find_base(path: Path, base_id: str, search_dir: Optional[Path]) -> Path:
         roots += [d for d in path.resolve().parents if d.name == "scenarios"][:1]
     for root in roots:
         for cand in sorted(Path(root).rglob("*.yaml")):
-            if cand == path or cand.name.endswith(".review.yaml"):
+            if cand == path or cand.name.endswith(".review.yaml") or cand.name == "用例设计.yaml":
                 continue
             try:
                 if str(_read(cand).get("id")) == base_id:

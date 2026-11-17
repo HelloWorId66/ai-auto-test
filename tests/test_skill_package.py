@@ -48,7 +48,7 @@ def _ifc(skill: Path, *args: str, cwd: Path):
 
 def test_package_is_self_contained(skill):
     assert (skill / "VERSION").read_text(encoding="utf-8").strip() == CORE_VERSION
-    for rel in ("SKILL.md", "scripts/ifc.py", "references/写场景.md", "references/场景模板.yaml",
+    for rel in ("SKILL.md", "scripts/ifc.py", "references/写场景.md", "references/场景模板.yaml", "references/用例设计模板.yaml",
                 "engine/ifc.py", "engine/core/ifcat/MANIFEST.json", "engine/requirements.lock",
                 "engine/templates/workspace/workspace.yaml", "engine/ui/server.py", "engine/tools/db_mcp.py"):
         assert (skill / rel).is_file(), rel

@@ -2,7 +2,7 @@
 from ifcat.adapters import build_default_registry
 from ifcat.locator import find_field_root
 from ifcat.meta import load_form
-from ifcat.pageview import field_lines
+from ifcat.pageview import field_lines, option_lines
 
 FORM = load_form({
     "formID": "F1", "formName": "演示", "version": "React",
@@ -67,3 +67,76 @@ def test_view_lists_fields_without_touching_the_page():
     lines = field_lines(page, FORM, build_default_registry())
     assert lines[0].split("\t") == ["合同编号", "FormTextInput", "", "可填", "HT-001"]
     assert "页面上没找到" in lines[1]
+
+
+class OptRoot:
+    """一个可填的下拉字段。"""
+
+    def __init__(self, page):
+        self.page, self.first = page, self
+
+    def count(self):
+        return 1
+
+    def is_visible(self):
+        return True
+
+    def locator(self, css):
+        if "disabled" in css:
+            return Loc(0)
+        return Trigger(self.page) if "ant-select-selector" in css else self
+
+
+class Trigger(Loc):
+    def __init__(self, page):
+        super().__init__(1)
+        self.page = page
+
+    def click(self):
+        self.page.open = True
+
+
+class Popup:
+    def __init__(self, page):
+        self.page, self.last = page, self
+
+    def count(self):
+        return 1 if self.page.open else 0
+
+    def is_visible(self):
+        return self.page.open
+
+    def evaluate(self, _):
+        return {"heads": ["编号", "名称"], "items": ["A001 甲公司", "A002 乙公司"]}
+
+
+class Keyboard:
+    def __init__(self, page):
+        self.page = page
+
+    def press(self, key):
+        self.page.keys.append(key)
+        self.page.open = False
+
+
+class OptPage:
+    def __init__(self):
+        self.open, self.keys, self.keyboard = False, [], Keyboard(self)
+
+    def locator(self, css):
+        if "ant-select-dropdown" in css:
+            return Popup(self)
+        return OptRoot(self) if "F1-A-form" in css else Loc(0)
+
+    def evaluate(self, *_):
+        return {"found": False, "labelHits": 0, "rootHits": 0}
+
+    def wait_for_timeout(self, _):
+        pass
+
+
+def test_options_are_listed_and_the_popup_is_closed_without_choosing():
+    page = OptPage()
+    lines = option_lines(page, FORM)
+    assert lines == ["合同编号（列：编号、名称）\tA001 甲公司；A002 乙公司"]
+    assert page.keys == ["Escape"] and not page.open

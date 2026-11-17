@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, List
 
+from . import waits
 from .adapters.registry import AdapterRegistry
 from .locator import find_field_root
 from .meta import FormMeta
@@ -64,13 +65,61 @@ def grid_lines(form: FormMeta) -> List[str]:
                                      for c in g.columns if c.visible and c.header) for g in form.grids]
 
 
-def view_form(sess: Any, form: FormMeta, registry: AdapterRegistry, out_dir: Path) -> str:
+_OPEN_POPUP = ".ant-select-dropdown:not(.ant-select-dropdown-hidden)"
+_READ_POPUP = """e => {
+  const vis = x => x.getClientRects().length > 0;
+  const rows = [...e.querySelectorAll('tr.ant-table-row')].filter(vis)
+    .map(r => [...r.cells].map(c => c.innerText.trim()).filter(Boolean).join(' '));
+  if (rows.length) return {heads: [...e.querySelectorAll('th')].map(h => h.innerText.trim()).filter(Boolean), items: rows};
+  const opts = [...e.querySelectorAll('.ant-select-item-option')].map(o => o.getAttribute('title') || o.innerText.trim());
+  if (opts.length) return {heads: [], items: opts};
+  return {heads: [], items: e.innerText.split('\\n').map(s => s.trim()).filter(Boolean)};
+}"""
+OPTION_LIMIT = 30
+
+
+def option_lines(page: Any, form: FormMeta) -> List[str]:
+    """把每个可填的下拉、弹层选择字段点开，读出里面的选项，再按 Esc 关掉。不选任何一项。"""
+    lines = []
+    for f in form.fields:
+        try:
+            root = find_field_root(page, form, f)
+            trigger = root.locator(".ant-select-selector")
+            if not root.first.is_visible() or not trigger.count() or root.locator(".ant-select-disabled").count():
+                continue
+            trigger.first.click()
+        except Exception:
+            continue
+        popup = page.locator(_OPEN_POPUP)
+        try:
+            waits.poll(lambda: popup.count() >= 1 and popup.last.is_visible(), 5.0, "选项弹层出现")
+            page.wait_for_timeout(800)  # 选项是异步加载的，弹层出现后稍等数据到齐
+            got = popup.last.evaluate(_READ_POPUP)
+            items = [_one_line(i) for i in got["items"] if _one_line(i)]
+            head = f"（列：{'、'.join(got['heads'])}）" if got["heads"] else ""
+            more = f" …… 只列出前 {OPTION_LIMIT} 项，更多的在页面上滚动或搜索" if len(items) >= OPTION_LIMIT else ""
+            name = f"{f.label}的币种" if f.type == "AmountComp" else f.label
+            lines.append(f"{name}{head}\t" + ("；".join(items[:OPTION_LIMIT]) + more if items else "点开后没有选项"))
+        except Exception:
+            lines.append(f"{f.label}\t点开后没有读到选项")
+        page.keyboard.press("Escape")
+        try:
+            waits.poll(lambda: page.locator(f"{_OPEN_POPUP}:visible").count() == 0, 3.0, "选项弹层关闭")
+        except Exception:
+            page.mouse.click(5, 5)
+            page.wait_for_timeout(400)
+    return lines
+
+def view_form(sess: Any, form: FormMeta, registry: AdapterRegistry, out_dir: Path, options: bool = False) -> str:
     """调用前已登录。返回给人看的文字。"""
+    page = sess.page
+    title = _one_line(page.title())
     sess.open_form(form.form_id)
     page = sess.page
     out_dir.mkdir(parents=True, exist_ok=True)
     shot = out_dir / f"{form.form_id}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
-    parts = [f"表单 {form.form_id}（{form.name}）新建页，只看不动：", "", "字段\t类型\t必填\t状态\t当前值"]
+    parts = [f"登录后的页面标题：{title}（环境配置里的 product_version 填其中的版本号，如 6.2.7-SNAPSHOT）",
+             f"表单 {form.form_id}（{form.name}）新建页，只看不动：", "", "字段\t类型\t必填\t状态\t当前值"]
     parts += field_lines(page, form, registry)
     grids = grid_lines(form)
     if grids:
@@ -79,5 +128,9 @@ def view_form(sess: Any, form: FormMeta, registry: AdapterRegistry, out_dir: Pat
     if buttons:
         parts += ["", "工具栏按钮\t状态"] + buttons
     page.screenshot(path=str(shot), full_page=True)
+    if options:
+        opts = option_lines(page, form)
+        parts += ["", "可选项（点开看了一眼，没有选）\t选项", *(opts or ["这张表单上没有可填的下拉或弹层选择字段"]),
+                  "表格里的下拉不在这里列出；用例设计确认后试跑时再看。"]
     parts += ["", f"截图：{shot}"]
     return "\n".join(parts)

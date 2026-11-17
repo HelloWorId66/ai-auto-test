@@ -9,7 +9,8 @@
   run <场景>|--module M|--all --env   运行一个批次，生成 HTML 报告；只运行已审核的场景，--draft 仅供调试
   calibrate --env 环境                用真实页面标定组件适配器
   forms import <表单ID>... --from-env 从被测环境读取表单定义
-  view <表单ID> --env 环境            只看不动地查看真实表单：字段是否显示、能否填、默认值、可用按钮
+  design <模块>/<功能>                把用例设计（用例设计.yaml）生成给业务人员确认的 HTML 页面
+  view <表单ID> [--options] --env 环境 只看不动地查看真实表单：字段是否显示、能否填、默认值、可用按钮；--options 再列出下拉里的选项
   harvest <工作区>...                 汇总各工作区临时补的扩展，供维护者定期归纳（只读）
 
 模块可以写多个，逗号分隔，如 --module DP,LM。
@@ -55,7 +56,7 @@ def _env_name(a: argparse.Namespace, ws: Workspace) -> str:
 
 def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="ifc", description="IFC AI 自动化测试框架")
-    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "view", "init", "doctor", "harvest"])
+    ap.add_argument("command", choices=["list", "validate", "render", "approve", "run", "calibrate", "forms", "view", "design", "init", "doctor", "harvest"])
     ap.add_argument("target", nargs="?", help="场景（文件、相对路径或名字）；view 时是表单 ID")
     ap.add_argument("rest", nargs="*", help="forms import 时的表单 ID；harvest 时的其他工作区目录")
     ap.add_argument("--out", help="harvest 的输出文件（不给则打印）")
@@ -71,6 +72,7 @@ def main(argv: List[str] | None = None) -> int:
     ap.add_argument("--project", help="init 时的项目名")
     ap.add_argument("--refresh", action="store_true", help="init 时只给已有工作区补上缺少的说明文件")
     ap.add_argument("--login", action="store_true", help="doctor 时实际登录一次，验证账号口令")
+    ap.add_argument("--options", action="store_true", help="view 时把下拉、弹层选择字段点开，列出里面的选项（只看不选）")
     ap.add_argument("--headed", action="store_true")
     ap.add_argument("--skip-integrity", action="store_true", help="跳过核心库完整性校验（仅开发期）")
     a = ap.parse_args(argv)
@@ -143,6 +145,8 @@ def _dispatch(a: argparse.Namespace) -> int:
 
     if a.command == "forms":
         return _forms(a, ws)
+    if a.command == "design":
+        return _design(a, ws)
     if a.command == "view":
         return _view(a, ws, registry)
 
@@ -312,13 +316,32 @@ def _run(a, ws: Workspace, scope: str, cands: List[Candidate], registry, bills) 
     return 0 if counts["passed"] == len(sc) - counts["skipped"] else 1
 
 
+def _design(a, ws: Workspace) -> int:
+    from .design import DesignError, design_page_name, find_design, load_design, render_design_html
+
+    if not a.target:
+        print("用法：ifc design <模块>/<功能>（读取 scenarios/<模块>/<功能>/用例设计.yaml，生成给业务人员确认的页面）", file=sys.stderr)
+        return 2
+    try:
+        d = load_design(find_design(ws.scenarios_dir, a.target))
+    except DesignError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    ws.reviews_dir.mkdir(parents=True, exist_ok=True)
+    out = ws.reviews_dir / design_page_name(d)
+    out.write_text(render_design_html(d), encoding="utf-8")
+    print(f"用例设计页面：{out}")
+    print(f"共 {len(d['cases'])} 条用例。请把这个页面交给用户确认；用户确认之前不要写场景文件、标定或试跑。")
+    return 0
+
+
 def _view(a, ws: Workspace, registry) -> int:
     from .pageview import view_form
     from .result import BlockedError
     from .session import Session
 
     if not a.target:
-        print("用法：ifc view <表单ID> [--env <环境>]", file=sys.stderr)
+        print("用法：ifc view <表单ID> [--options] [--env <环境>]", file=sys.stderr)
         return 2
     cfg = load_config(ws.env_config(_env_name(a, ws)))
     form = load_form_file(find_form_file(a.target, ws.form_dirs))
@@ -326,7 +349,7 @@ def _view(a, ws: Workspace, registry) -> int:
     try:
         sess.start()
         sess.login(next(iter(cfg.accounts)))
-        print(view_form(sess, form, registry, ws.results_dir / "view"))
+        print(view_form(sess, form, registry, ws.results_dir / "view", options=a.options))
         return 0
     except BlockedError as exc:
         print(f"没能打开表单：{exc}", file=sys.stderr)

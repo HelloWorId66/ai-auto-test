@@ -1,6 +1,6 @@
 {
   "files": {
-    "__init__.py": "af011d8fd564c73c32ec62a70d1748abaa20bedc29ce05224b2069248d169452",
+    "__init__.py": "7927179b8a99313e28f09a5f896e45234a1425436fa9ae5512a54ef53d66db5c",
     "actions.py": "a5114d8862b29ebcdf7a54416e1aa25f8df50001ab4a1995ceb704c80603b9e1",
     "adapters/__init__.py": "443179e775b09083bb0e60660d9d898414bedf18c41339bd236278ff9ac9249b",
     "adapters/base.py": "32d44b3161ff21ff334730ad68336040dae2c4e1bf8526185ff4b1447cb458e6",
@@ -9,10 +9,11 @@
     "adapters/registry.py": "1cc1d0224d72c5df9f522501d15efb84dd7e33b85790da5839aaec08a1b1f4c3",
     "batch.py": "45721ccbb985688a7ffa086a5b9cda949dac1ca88b8c2d4f9b946eed33573418",
     "calibration.py": "3c5cefc5f401596cda857d716b8d0a9c92e2e2f105dca7e46d8be04c78a83ed2",
-    "cli.py": "8e73660caac2aa4dddd0ad67c39006d4123ade520d5e61bb319bc49310c18244",
+    "cli.py": "5ea76fe67ad68758eb3418c7d60cdaba72dfdb89ee16182b5f07273f13ba0833",
     "config.py": "4a929eacaea34c85a19fe7947d590e4a72d856618d93d32033a7c78b9570527d",
     "dbro.py": "bb017efe7aeba4c982fdad5f21a883240135f3e5e83da9261640bba4adbeb0c1",
-    "doctor.py": "a775a1a88f976e2f2d2e4cf19d57660bf8daab230abc7fca078aa785b284c145",
+    "design.py": "386baf1935a80f52987d77b5c29ce4fb17a81b93b8e9e40b9fa2c6b7a6382bf5",
+    "doctor.py": "d768112a64c0c3d74fa8dba94cd6d91e7d010e3d460eb1e0f19af71dac730f99",
     "evidence.py": "da9e717be1e761b048e4e5e5f51b8fb1fd54a5a47132cd30760c40b63b8f6609",
     "ext.py": "1d0efc4aa40c8e8e14f015ee7b5a4b2a7210910ca9c0254b54494c1e55ae79ce",
     "extloader.py": "0fde345baf00fb13c75d09513b315fec51c428cec2398d005d3a580e288c3881",
@@ -26,7 +27,7 @@
     "mcpdb.py": "c40a955c3ca64cf50f103f3be8f99a3f890d90aa4e22ec494473db39183a5f90",
     "meta/__init__.py": "fbd719cf14e0c34aa84e59dc7b9f9add91802a19ac805c7906c40ab682664594",
     "meta/formmeta.py": "0f183f64803c8cc44a634a165a9f207c106b9ea066af93cf16670ca81cb80a3b",
-    "pageview.py": "481a7e8dd8cf9f036117c4297601f425974366884cc0b9bace530ad927c56870",
+    "pageview.py": "fa8090adaa480810a35a8f6ceb382eab8dccf161ac4858469d18c519f11a87e6",
     "primitives.py": "78984801d22b0ae83fb58b9021ec98d5d381f4e602cd5ceec468a29ec342947a",
     "report.py": "753676e9d3d588a440571e5d819a8c29dd016abcba8314226302d0073583de53",
     "result.py": "802c6f1b6aa75c0557ea9237bd426ae50c4dc7552288e6e87e9b90e16ab3ba2f",
@@ -34,13 +35,13 @@
     "reviewpage.py": "55e0c67fee9f96b06e37d2ef1c9f95c4ac3cd79738c073257eb4f6cade67a912",
     "runner.py": "7dcfdae1ee5c58001a1c78a64253b4ce4b172c4c780349448199954460344888",
     "scaffold.py": "47840a0ea550d0381501d908447a84cc05efba14470286622b420ca307cc72d4",
-    "scenario.py": "b9a4977ce2f786d0cc55d6d0698a2994a3c2ec4e46b8894a88f046b43a13cf0f",
+    "scenario.py": "b1f887e6cc41e5ad4c4036cdd7b153f9f7a50ba5e295d2c36272c29be4ff4fd3",
     "selectors.py": "9a71574257454da212087b797e026e1feffc8cf9f3b64ab2d7400dc8700f3066",
     "session.py": "a550b465767f593bb5a5a017d62d829a0277f7fdfaadf7fb5ca024954e9cc432",
     "statemodel.py": "fd0e51421baff8031dc35af1aad29aaf3ffb1c6abeed2e73775b892b45f16f03",
     "waits.py": "bd8404781f3193fc25f0373b87e105ac9a9dff03320451ecd97b0526164a4d8a",
-    "workspace.py": "40251c44bfb9e9955327ba655f2e43ca2fed3a3b0e26340dc73023ed00ae2713",
+    "workspace.py": "667a6623254416fd7f16a2d8201f9dd62029edce92ceafb2f1b91af8e261365e",
     "xlsxread.py": "7d5d6aab33c9bd72a964c783d142b018306046efda2f5c540f4b0df718855d27"
   },
-  "version": "0.4.0"
+  "version": "0.5.0"
 }
