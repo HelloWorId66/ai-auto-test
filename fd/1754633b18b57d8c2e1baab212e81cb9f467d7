@@ -1,0 +1,69 @@
+core/ifcat/MANIFEST.json
+  s_b6a1e886507c80::t_cb253df161e40f 3,12,15-16,30,38,43,46
+core/ifcat/__init__.py
+  s_b6a1e886507c80::t_5d67321d437337 6
+core/ifcat/cli.py
+  s_ccfa132c16730b::t_1f8abb384aa435 12-13,59,75,148-149,319-337,344,352
+core/ifcat/design.py
+  s_ccfa132c16730b::t_43190d99525629 1-160
+core/ifcat/doctor.py
+  s_ccfa132c16730b::t_27531755202d7d 98,103-105
+core/ifcat/pageview.py
+  s_ccfa132c16730b::t_3807bd0cd1d499 11,68-113,115-116,121-122,131-134
+core/ifcat/scenario.py
+  s_ccfa132c16730b::t_c57a9969a7d0e1 205
+core/ifcat/workspace.py
+  s_ccfa132c16730b::t_285e09d1d26189 21,82-83
+skills/ifc-autotest/SKILL.md
+  s_ccfa132c16730b::t_f6ae0482ca0ed2 3,13,36,46-49,53-56,60-63,69,113-114,128
+skills/ifc-autotest/references/写场景.md
+  s_ccfa132c16730b::t_2a373fa57e5c40 5,40,42,124-134,142
+skills/ifc-autotest/references/查资料.md
+  s_ccfa132c16730b::t_744b335d636e6e 25,29,66
+skills/ifc-autotest/references/用例设计模板.yaml
+  s_ccfa132c16730b::t_b84ead0ec99618 1-52
+skills/ifc-autotest/references/识别页面.md
+  s_ccfa132c16730b::t_8ffbad91d8027a 14,82
+templates/workspace/AGENTS.md
+  s_ccfa132c16730b::t_73f4fa38702a73 9
+templates/workspace/env.yaml.example
+  s_ccfa132c16730b::t_6cde341aa574e6 5
+tests/test_skill_package.py
+  s_b6a1e886507c80::t_11e477305345c5 51
+tests/core/test_design.py
+  s_bf54cd1fb4eb0b::t_3b00d3806442a7 1-82
+tests/core/test_pageview.py
+  s_bf54cd1fb4eb0b::t_f2c4fe82cf91c7 5,70-142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fd1754633b18b57d8c2e1baab212e81cb9f467d7",
+  "prompts": {},
+  "sessions": {
+    "s_b6a1e886507c80": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9e932ebe-83f8-4e11-ba68-d5c9a518f329",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    },
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    },
+    "s_ccfa132c16730b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "25daaf2a-6ac2-4ec2-98de-64fd14da41b3",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
