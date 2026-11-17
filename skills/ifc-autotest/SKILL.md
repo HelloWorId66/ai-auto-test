@@ -21,7 +21,13 @@ description: IFC（境外财资管理软件，OSP/PanUI React 表单）业务功
 python3 <技能目录>/scripts/ifc.py <命令> [参数]        （Windows 上用 python）
 ```
 
-在工作区目录里运行；不在工作区里时加 `--workspace <工作区目录>`。第一次运行会自动准备运行环境（几分钟，只做一次），不需要用户动手。
+在工作区目录里运行；不在工作区里时加 `--workspace <工作区目录>`。
+
+**运行环境由你负责准备好，不要让用户自己去装：**
+
+1. 先确认本机有 Python 3.10 或更高版本：依次试 `python3 --version`、`python --version`，Windows 上再试 `py -3 --version`。哪个能用，后面就用哪个来运行 `scripts/ifc.py`。
+2. 都没有，或者版本低于 3.10：告诉用户"需要先装一个 Python，我来装，可以吗"，得到同意后你来安装。macOS 用 `brew install python@3.12`（没有 brew 就从 python.org 下载安装包）；Windows 用 `winget install Python.Python.3.12`。装完重新开一个终端再确认版本。
+3. 其余的（依赖和浏览器，约 200 MB）在第一次运行 `ifc` 命令时自动下载安装，需要联网，要几分钟，只做一次。开始前跟用户说一声"第一次要准备环境，稍等几分钟"。失败时命令会说明原因和日志位置，多半是网络问题，处理后重新执行同一条命令即可。
 
 ## 开始前
 
