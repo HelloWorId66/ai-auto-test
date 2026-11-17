@@ -1,0 +1,19 @@
+skills/ifc-autotest/SKILL.md
+  s_bf54cd1fb4eb0b::t_7534b54041b5bd 24-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "7dcf79dbdc2ac6edca9aac8ff894722edb0cb8c0",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
