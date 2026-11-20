@@ -26,6 +26,10 @@ DESIGN_CSS = """
 """
 
 
+CHAIN_FIELDS = (("业务对象", "object"), ("上游", "upstream"), ("下游", "downstream"))
+STEP_KEYS = {"who", "do", "expect"}
+
+
 class DesignError(Exception):
     pass
 
@@ -80,8 +84,15 @@ def load_design(path: Path) -> Dict[str, Any]:
         for j, s in enumerate(steps, 1):
             if not isinstance(s, dict) or not _text(s.get("who")) or not _text(s.get("do")):
                 errors.append(f"{name} 第 {j} 步要写明 who（谁）和 do（做什么）")
+            elif set(s) - STEP_KEYS:
+                extra = "".join(f"「{k}」" for k in s if k not in STEP_KEYS)
+                errors.append(f"{name} 第 {j} 步多出了 {extra}，像是被英文逗号截断的内容："
+                              "一行写法里含逗号的内容（如 HKD 30,000）要加双引号")
         if not any(isinstance(s, dict) and _text(s.get("expect")) for s in steps):
             errors.append(f"{name} 没有任何一步写了 expect（预期结果）")
+    chain = d.get("chain")
+    if chain is not None and not isinstance(chain, dict):
+        errors.append("chain（业务链）要写成「object / upstream / downstream」几项")
     for i, r in enumerate(d.get("rules") or [], 1):
         if not isinstance(r, dict) or not _text(r.get("rule")) or not _text(r.get("source")):
             errors.append(f"第 {i} 条业务规则要写明 rule（规则）和 source（依据）")
@@ -110,7 +121,9 @@ def _case_section(c: Dict[str, Any], idx: int) -> str:
     return (f'<section class="sc" id="case{idx}"><div class="sc-h"><h2>{_kind_chip(_text(c["kind"]))}'
             f'用例 {idx}：{esc(_text(c["title"]))}</h2></div><div class="sc-b"><dl class="kv">'
             f'<dt>要保证什么</dt><dd>{esc(_text(c["goal"]))}</dd>'
-            f'<dt>前提</dt><dd>{_list(_items(c.get("preconditions")))}</dd>'
+            + "".join(f"<dt>{label}</dt><dd>{esc(_text(c.get(key)))}</dd>"
+                      for label, key in (("业务形态", "form"), ("对象从哪里来", "object_from")) if _text(c.get(key)))
+            + f'<dt>前提</dt><dd>{_list(_items(c.get("preconditions")))}</dd>'
             f'<dt>测试数据</dt><dd><div class="chips">{chips or "无"}</div></dd></dl>'
             f'<table class="steps"><tr><th>步骤</th><th>谁</th><th>做什么</th><th>预期结果</th></tr>{rows}</table>'
             f"</div></section>")
@@ -133,14 +146,23 @@ def render_design_html(d: Dict[str, Any]) -> str:
     if about:
         parts.append('<div class="card"><dl class="kv">' + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in about)
                      + "</dl></div>")
+    chain = d.get("chain") if isinstance(d.get("chain"), dict) else {}
+    links = [(k, _text(chain.get(f))) for k, f in CHAIN_FIELDS if _text(chain.get(f))]
+    mechanisms = _items(chain.get("mechanisms"))
+    if mechanisms:
+        links.append(("共同机制", "、".join(mechanisms)))
+    if links:
+        parts.append('<h2>这个功能在业务链上的位置</h2><div class="card"><dl class="kv">'
+                     + "".join(f"<dt>{esc(k)}</dt><dd>{esc(v)}</dd>" for k, v in links) + "</dl></div>")
     if questions:
         parts.append('<div class="ask"><h3>请先确认这些问题（目前没有证据，我不会替你定）</h3><ul>'
                      + "".join(f"<li>{esc(q)}</li>" for q in questions) + "</ul></div>")
     toc = "".join(f'<tr><td>{_kind_chip(_text(c["kind"]))}</td><td><a href="#case{i}">{esc(_text(c["title"]))}</a>'
-                  f'<div class="sub">{esc(_text(c["goal"]))}</div></td><td>{len(c["steps"])}</td></tr>'
+                  f'<div class="sub">{esc(_text(c["goal"]))}</div></td><td>{esc(_text(c.get("form"))) or "—"}</td>'
+                  f'<td>{len(c["steps"])}</td></tr>'
                   for i, c in enumerate(cases, 1))
     parts.append('<h2>准备测的用例</h2><table><tr><th style="width:90px">类型</th><th>用例</th>'
-                 f'<th style="width:60px">步骤</th></tr>{toc}</table>')
+                 f'<th style="width:22%">业务形态</th><th style="width:60px">步骤</th></tr>{toc}</table>')
     if rules:
         rows = "".join(f"<tr><td>{esc(_text(r.get('id')) or f'R{i}')}</td><td>{esc(_text(r['rule']))}</td>"
                        f"<td>{esc(_text(r['source']))}</td><td>{esc(_text(r.get('verified')) or '未核实')}</td></tr>"
@@ -151,7 +173,7 @@ def render_design_html(d: Dict[str, Any]) -> str:
     if skipped:
         rows = "".join(f"<tr><td>{esc(_text(x.get('what')))}</td><td>{esc(_text(x.get('why')))}</td></tr>" for x in skipped)
         parts.append(f"<h2>这次不测的</h2><table><tr><th>不测什么</th><th>为什么</th></tr>{rows}</table>")
-    parts.append('<div class="note"><b>请重点看：</b>这几条用例是不是你们日常真正会走的？有没有漏掉的核心场景？'
+    parts.append('<div class="note"><b>请重点看：</b>这几条用例是不是你们日常真正会走的？业务形态有没有漏掉常见的？'
                  '每一步的预期结果对不对？确认或要改的地方直接告诉智能体。<b>你确认之后，才会开始做自动化。</b></div>')
     return page(f"用例设计：{_text(d['feature'])}", "".join(parts)).replace("</head>", PAGE_CSS + DESIGN_CSS + "</head>", 1)
 

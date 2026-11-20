@@ -82,3 +82,33 @@ def test_retake_registered_and_db_count_rendered_and_validated():
                    "args": {"flow": "X", "key": "B1", "table": "t", "count": -1, "where": ["F_A"]}}]})
     msgs = " ".join(str(i) for i in validate_scenario(bad, {}))
     assert "count" in msgs and "where" in msgs
+
+_CUT = """id: X
+title: t
+module: LM
+goal: g
+roles: {maker: m}
+steps:
+  - {id: s1, as: maker, do: fill, 说明: 填, args: {form: F1, values: {金额: HKD 1,000}}}
+  - {id: d1, as: maker, do: expect_db_record, 说明: 查, args: {flow: F, key: k, table: head, where: {F_X: null}}}
+"""
+
+
+def test_amount_cut_by_comma_in_one_line_step_is_refused(tmp_path):
+    from ifcat.scenario import ScenarioError, load_scenario
+    p = tmp_path / "x.yaml"
+    p.write_text(_CUT, encoding="utf-8")
+    with pytest.raises(ScenarioError, match="加双引号"):
+        load_scenario(p)
+    p.write_text(_CUT.replace("HKD 1,000", '"HKD 1,000"'), encoding="utf-8")
+    sc = load_scenario(p)
+    assert sc.steps[0].args["values"]["金额"] == "HKD 1,000"
+    assert sc.steps[1].args["where"] == {"F_X": None}
+
+
+def test_text_cut_by_comma_in_step_description_is_refused(tmp_path):
+    from ifcat.scenario import ScenarioError, load_scenario
+    p = tmp_path / "x.yaml"
+    p.write_text(_CUT.replace("说明: 填,", "说明: 先填, 再看,").replace("HKD 1,000", '"HKD 1000"'), encoding="utf-8")
+    with pytest.raises(ScenarioError, match="再看"):
+        load_scenario(p)

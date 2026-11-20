@@ -158,11 +158,38 @@ def parse_scenario(raw: Dict[str, Any]) -> Scenario:
     )
 
 
+_STEP_KEYS = {"id", "as", "do", "说明", "text", "args"}
+
+
+def _comma_cut(node: Any, trail: str = "") -> Optional[str]:
+    """一行写法 {a: x, b: y} 里，值中的英文逗号会被当成分隔符：「HKD 1,000」变成「HKD 1」加一个空键「000」。
+    YAML 不报错，值却悄悄变了，所以要找出来。"""
+    if isinstance(node, dict):
+        is_step = "do" in node
+        for k, v in node.items():
+            here = f"{trail}.{k}" if trail else str(k)
+            if v is None and (isinstance(k, (int, float)) or re.match(r"\d", str(k)) or (is_step and k not in _STEP_KEYS)):
+                return here
+            found = _comma_cut(v, here)
+            if found:
+                return found
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            found = _comma_cut(v, f"{trail}[{i}]")
+            if found:
+                return found
+    return None
+
+
 def _read(path: Path) -> Dict[str, Any]:
     try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
         raise ScenarioError(f"场景不是有效的 YAML：{path}") from exc
+    cut = _comma_cut(raw)
+    if cut:
+        raise ScenarioError(f"{path.name} 里「{cut}」像是被英文逗号截断的内容：一行写法里含逗号的值（如 HKD 1,000）要加双引号")
+    return raw
 
 
 def _set_path(data: Dict[str, Any], dotted: str, value: Any) -> None:

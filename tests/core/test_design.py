@@ -77,6 +77,37 @@ def test_design_file_is_not_treated_as_a_scenario(ws_root, capsys):
     assert "演示.yaml" in out and "无法解析" not in out and "用例设计" not in out
 
 
+def test_design_page_is_organized_by_business_chain():
+    d = {**DESIGN,
+         "chain": {"object": "一笔授信额度", "upstream": "品种已维护", "downstream": "合同可以占用",
+                   "mechanisms": ["申请和结果分开", "额度占用"]},
+         "cases": [{**DESIGN["cases"][0], "form": "单一品种 12 个月", "object_from": "本用例新建"}]}
+    html = render_design_html(d)
+    for text in ("这个功能在业务链上的位置", "业务对象", "一笔授信额度", "品种已维护", "合同可以占用", "申请和结果分开、额度占用",
+                 "业务形态", "单一品种 12 个月", "对象从哪里来", "本用例新建"):
+        assert text in html
+    assert "业务链上的位置" not in render_design_html(DESIGN)
+
+
+def test_comma_that_cut_a_one_line_step_is_reported(tmp_path):
+    p = tmp_path / "用例设计.yaml"
+    p.write_text("module: LM\nfeature: 授信\ncases:\n  - title: a\n    kind: 主流程\n    goal: g\n    steps:\n"
+                 "      - {who: 制单人, do: 改为 HKD 30,000 再提交, expect: 审批中}\n", encoding="utf-8")
+    with pytest.raises(DesignError, match="加双引号"):
+        load_design(p)
+
+
+def test_chain_must_be_a_mapping(tmp_path):
+    p = tmp_path / "用例设计.yaml"
+    p.write_text(yaml.safe_dump({**DESIGN, "chain": "授信额度"}, allow_unicode=True), encoding="utf-8")
+    with pytest.raises(DesignError, match="chain"):
+        load_design(p)
+
+
 def test_shipped_template_renders():
-    html = render_design_html(load_design(TEMPLATE))
-    assert "企业授信额度申请" in html and "请先确认这些问题" in html
+    d = load_design(TEMPLATE)
+    html = render_design_html(d)
+    assert "企业授信额度申请" in html and "请先确认这些问题" in html and "业务链上的位置" in html
+    assert all(c.get("form") for c in d["cases"])
+    assert not any("必填" in c["title"] for c in d["cases"])
+    assert "HKD 30,000" in html and "HKD 90,000" in html
