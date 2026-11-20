@@ -1,0 +1,47 @@
+core/ifcat/MANIFEST.json
+  s_bf54cd1fb4eb0b::t_66560b063a5d38 3,15,38,46
+core/ifcat/__init__.py
+  s_bf54cd1fb4eb0b::t_84dbaef6e13895 6
+core/ifcat/design.py
+  s_bf54cd1fb4eb0b::t_c9a0ae6a4d6c38 29-32,87-90,93-95,124-126,149-156,161-162,165,176
+core/ifcat/scenario.py
+  s_bf54cd1fb4eb0b::t_99503a6cd954d7 161-183,186,189-192
+skills/ifc-autotest/SKILL.md
+  s_bf54cd1fb4eb0b::t_0659bbfa5c2489 46-47,84-91,133-134,137
+skills/ifc-autotest/references/产品与模块.md
+  s_bf54cd1fb4eb0b::t_cca6b00d652407 1-93
+skills/ifc-autotest/references/写场景.md
+  s_bf54cd1fb4eb0b::t_23423dca2fe430 29-30
+skills/ifc-autotest/references/排查与扩展.md
+  s_bf54cd1fb4eb0b::t_f7905fdb52df99 9
+skills/ifc-autotest/references/数据库检查.md
+  s_bf54cd1fb4eb0b::t_1428e76f09435e 29-38
+skills/ifc-autotest/references/查资料.md
+  s_bf54cd1fb4eb0b::t_b34c3ee524f65d 12,55-68
+skills/ifc-autotest/references/用例设计模板.yaml
+  s_bf54cd1fb4eb0b::t_d8c635acf12f01 4,14-20,29-32,35,37-38,44,47,49-50,52,54-60,62-63,65,67-71,74
+skills/ifc-autotest/references/识别页面.md
+  s_bf54cd1fb4eb0b::t_9213301612635f 1,3,5,7,9-37,41,45,50,52,58,60,62-69,71,73-77,79,81-82,84-85,89,91,93,95-97,99,105
+skills/ifc-autotest/references/选用例.md
+  s_bf54cd1fb4eb0b::t_94b0dda2f61d56 1-76
+tests/core/test_design.py
+  s_bf54cd1fb4eb0b::t_dd14593007133c 80-106,108-113
+tests/core/test_new_steps.py
+  s_bf54cd1fb4eb0b::t_6bb4d840634c8f 85-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0d880d3f42b1bd15c0d406d9b08be3905699dfc1",
+  "prompts": {},
+  "sessions": {
+    "s_bf54cd1fb4eb0b": {
+      "agent_id": {
+        "tool": "droid",
+        "id": "1f4ff0c7-b25a-4e3f-b1c4-656b608cd5c7",
+        "model": "unknown"
+      },
+      "human_author": "wangshenhang <wangshenhang@pansoft.com>"
+    }
+  }
+}
