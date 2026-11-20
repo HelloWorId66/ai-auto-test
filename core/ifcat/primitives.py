@@ -22,7 +22,7 @@ from . import grid as grid_mod
 from . import xlsxread
 from .adapters.business import _click_unique_text
 from .result import BlockedError, Status, StepResult
-from .statemodel import BillModel, StateModelError
+from .statemodel import BillModel, StateModelError, where_clause
 
 
 def _same_value(expected: Any, actual: Any) -> bool:
@@ -292,9 +292,12 @@ class Primitives:
         return self._step(f"验 数据库状态 {flow_no}", run)
 
     def expect_db_record(self, flow_no: str, key: Any, table: str, expect: Optional[Dict[str, Any]] = None,
-                         absent: bool = False, wait: int = 0) -> StepResult:
-        """按单据编号找到单据头，再检查单据头（table=head）或它关联的结果表里的记录：
-        有没有、字段值对不对；absent=true 表示这条记录不应存在。
+                         absent: bool = False, wait: int = 0, where: Optional[Dict[str, Any]] = None,
+                         count: Optional[int] = None) -> StepResult:
+        """按单据编号找到单据头，再检查单据头（table=head）或它关联的结果表里的记录。
+        where 是附加筛选条件（列 -> 值），先用它圈出要看的记录；
+        不给 count：至少有一条记录的字段值和 expect 全部一致；
+        给 count：圈出的记录正好 count 条，并且每一条都和 expect 一致（count=0 等同 absent）。
         wait 是最长等待秒数，用于后台线程异步生成的记录（如转账指令）。"""
 
         def run() -> StepResult:
@@ -306,36 +309,58 @@ class Primitives:
             try:
                 head_sql = model.head_row_sql()
                 res_sql = None if table == "head" else model.result_sql(table)
+                extra_sql, extra = where_clause(where)
             except StateModelError as exc:
                 raise BlockedError(str(exc)) from exc
+            want_n = 0 if absent else (None if count is None else int(count))
             want = {str(c).lower(): v for c, v in (expect or {}).items()}
+
+            def mismatch(row: Dict[str, Any]) -> List[str]:
+                return [f"{c} 期望 {v}，实际 {row.get(c)}" for c, v in want.items() if not _same_value(v, row.get(c))]
+
             deadline = time.monotonic() + max(0, int(wait))
             while True:
                 heads = self.db.query(head_sql, {"key": key})
-                rows: List[Dict[str, Any]] = heads
-                sql = head_sql
+                rows: List[Dict[str, Any]] = []
+                sql = head_sql + extra_sql
                 if heads and res_sql:
                     links = model.results[table].link
                     params = {r.lower(): heads[0].get(h.lower()) for r, h in links.items()}
-                    rows, sql = self.db.query(res_sql, params), res_sql
-                bad = [f"{c} 期望 {v}，实际 {rows[0].get(c)}" for c, v in want.items()
-                       if rows and not _same_value(v, rows[0].get(c))]
-                done = (not rows) if absent else (bool(rows) and not bad)
+                    sql = res_sql + extra_sql
+                    rows = self.db.query(sql, {**params, **extra})
+                elif heads:
+                    rows = self.db.query(sql, {"key": key, **extra}) if extra_sql else heads
+                bad_rows = [(i, mismatch(r)) for i, r in enumerate(rows, 1)]
+                bad_rows = [(i, m) for i, m in bad_rows if m]
+                if want_n is None:
+                    done = bool(rows) and len(bad_rows) < len(rows)
+                else:
+                    done = len(rows) == want_n and not bad_rows
                 if done or time.monotonic() >= deadline:
                     break
                 time.sleep(2)
             ev = [self.rec.save_query(f"{table}_{flow_no}", sql, rows)]
             self.checkpoints += 1
+            waited = f"（已等待 {wait} 秒）" if wait else ""
+            scope = "符合条件的" if where else ""
             if not heads:
                 return StepResult.failed(f"单据头里没有 {model.key_col}={key} 的记录", ev)
-            if absent:
+            if want_n == 0:
                 if rows:
-                    return StepResult.failed(f"{table} 不应有记录，实际有 {len(rows)} 条", ev)
-                return StepResult.passed(f"{table} 没有记录（符合预期）", ev)
+                    return StepResult.failed(f"{table} 不应有{scope}记录，实际有 {len(rows)} 条{waited}", ev)
+                return StepResult.passed(f"{table} 没有{scope}记录（符合预期）", ev)
+            if want_n is not None:
+                if len(rows) != want_n:
+                    return StepResult.failed(f"{table} {scope}记录 {len(rows)} 条，期望 {want_n} 条{waited}", ev)
+                if bad_rows:
+                    i, m = bad_rows[0]
+                    return StepResult.failed(f"{table} 共 {len(rows)} 条，第 {i} 条不一致：" + "；".join(m), ev)
+                return StepResult.passed(f"{table} {scope}记录 {want_n} 条" + (f"，{len(want)} 个字段值都一致" if want else ""), ev)
             if not rows:
-                return StepResult.failed(f"{table} 没有找到对应记录" + (f"（已等待 {wait} 秒）" if wait else ""), ev)
-            if bad:
-                return StepResult.failed("；".join(bad), ev)
+                return StepResult.failed(f"{table} 没有找到{scope}记录{waited}", ev)
+            if len(bad_rows) == len(rows):
+                more = f"（共 {len(rows)} 条，都不一致，以上是第 1 条）" if len(rows) > 1 else ""
+                return StepResult.failed("；".join(bad_rows[0][1]) + more, ev)
             return StepResult.passed(f"{table} 已生成，{len(want)} 个字段值一致", ev)
 
         return self._step(f"验 数据库记录 {table}", run)
@@ -590,6 +615,35 @@ class Primitives:
             return StepResult.passed("已退回" + (f"（提示：{toasts[0]}）" if toasts else ""), ev)
 
         return self._step(f"退回 {bill}", run)
+
+    def retake(self, bill: str, **_: Any) -> StepResult:
+        """提交人在首页「我的已办」里把刚提交的单据取回（回到制单），取回后单据应回到本人待办。
+        下一节点已经处理过的单据不能取回，这时「我的已办」那一行没有「取回」，判为没通过。"""
+
+        def run() -> StepResult:
+            self._need_nav().go_home()
+            flowops.open_tab(self.page, flowops.text(self.ui, "tab_processed"))
+            label = flowops.text(self.ui, "retake")
+            if flowops.bill_row_text(self.page, str(bill)) is None:
+                raise BlockedError(f"「我的已办」里找不到单据 {bill}，当前账号可能不是提交人")
+            if not flowops.row_has_action(self.page, str(bill), label):
+                return StepResult.failed(f"「我的已办」里单据 {bill} 没有「{label}」，当前不能取回（可能下一节点已处理）",
+                                         self._screenshot("retake"))
+            flowops.row_action(self.page, str(bill), label)
+            self.page.wait_for_timeout(1200)
+            flowops.confirm_dialog(self.page, label)
+            toasts = flowops.collect_toasts(self.page, 3500)
+            bad = flowops.failed_toast(toasts, self.ui)
+            if bad:
+                return StepResult.failed(f"取回失败：{bad}", self._screenshot("retake"))
+            flowops.open_tab(self.page, flowops.text(self.ui, "tab_todo"))
+            row = flowops.bill_row_text(self.page, str(bill))
+            ev = self._screenshot("retake")
+            if not row:
+                return StepResult.failed(f"取回后单据 {bill} 没有回到本人待办", ev)
+            return StepResult.passed("已取回" + (f"（提示：{toasts[0]}）" if toasts else ""), ev)
+
+        return self._step(f"取回 {bill}", run)
 
     def open_todo(self, bill: str, form: str, **_: Any) -> StepResult:
         """在本人待办里打开单据（如被退回的单据回到制单人待办），进入该单据的表单页。"""

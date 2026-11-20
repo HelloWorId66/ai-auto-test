@@ -88,6 +88,24 @@ class BillModel:
         return f"SELECT * FROM {rt.table} WHERE {conds}"
 
 
+def where_clause(where: Optional[Dict[str, Any]]) -> "tuple[str, Dict[str, Any]]":
+    """场景里给的附加筛选条件（列 -> 值）变成 SQL 片段和绑定参数。列名校验为标识符，值一律绑定，不拼进语句。
+    值为 None 表示该列为空。"""
+    if not where:
+        return "", {}
+    if not isinstance(where, dict):
+        raise StateModelError(f"筛选条件要写成「列: 值」，收到 {where!r}")
+    sql, params = "", {}
+    for i, (col, val) in enumerate(where.items()):
+        _ident(str(col), "筛选列")
+        if val is None:
+            sql += f" AND {col} IS NULL"
+        else:
+            sql += f" AND {col} = :w{i}"
+            params[f"w{i}"] = str(val)
+    return sql, params
+
+
 def load_bill_models(path: str | Path) -> Dict[str, BillModel]:
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     models: Dict[str, BillModel] = {}

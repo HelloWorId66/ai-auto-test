@@ -31,6 +31,7 @@ STEP_SPECS: Dict[str, List[str]] = {
     "submit": ["form"],
     "approve": ["bill"],
     "reject": ["bill"],
+    "retake": ["bill"],
     "edit": ["form"],
     "open_todo": ["bill", "form"],
     "submit_with_warning": ["form", "warning", "then"],
@@ -415,13 +416,21 @@ def validate_scenario(sc: Scenario, forms: Dict[str, FormMeta], registry: Option
             m = bills[a["flow"]]
             if a.get("table") != "head" and a.get("table") not in m.results:
                 err(s.id, f"流程 {a['flow']} 没有结果表 {a.get('table')}（可用：head、{'、'.join(m.results)}）")
+        if s.do == "expect_db_record":
+            if a.get("where") is not None and not isinstance(a.get("where"), dict):
+                err(s.id, "where 要写成「列: 值」")
+            n = a.get("count")
+            if n is not None and (isinstance(n, bool) or not isinstance(n, int) or n < 0):
+                err(s.id, f"count 要写成不小于 0 的整数，收到 {n!r}")
+            elif n not in (None, 0) and a.get("absent"):
+                err(s.id, "absent 和 count 同时给了且互相矛盾（absent 等于 count: 0）")
     return issues
 
 
 # --- 渲染成业务人员审的文字版 ---
 _DO_TEXT = {
     "open": "打开", "fill": "填写", "fill_grid": "填写表格", "save": "保存", "submit": "提交审批",
-    "approve": "同意", "reject": "退回", "pick_record": "选择记录", "expect_query": "检查查询结果", "expect_not_listed": "检查选不到", "capture_field": "记录字段值", "capture_db": "从数据库记录单据信息",
+    "approve": "同意", "reject": "退回", "retake": "取回", "pick_record": "选择记录", "expect_query": "检查查询结果", "expect_not_listed": "检查选不到", "capture_field": "记录字段值", "capture_db": "从数据库记录单据信息",
     "expect_field": "检查界面", "expect_flow_completed": "检查流程办结", "expect_grid": "检查表格", "expect_db_status": "检查单据状态",
     "expect_db_result": "检查业务结果", "expect_db_record": "检查数据库记录", "edit": "点编辑修改", "open_todo": "在待办里打开单据",
     "submit_with_warning": "提交并检查提示", "approve_blocked": "同意被拦截", "expect_visible": "检查是否显示",

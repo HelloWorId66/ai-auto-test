@@ -76,12 +76,12 @@ class ScenarioRunner:
             return p.expect_db_result(a["flow"], a["result"], a["where"], int(a.get("min_rows", 1)), a.get("max_rows"))
         if do == "expect_db_record":
             return p.expect_db_record(a["flow"], a["key"], a["table"], a.get("expect"), bool(a.get("absent", False)),
-                                      int(a.get("wait", 0)))
+                                      int(a.get("wait", 0)), a.get("where"), a.get("count"))
         if do == "capture_field":
             return self._capture(step, a)
         if do == "capture_db":
             return self._capture_db(a)
-        if do in ("open", "save", "expect_flow_completed", "submit", "approve", "reject", "pick_record", "expect_query", "expect_not_listed", "fill_grid", "expect_grid",
+        if do in ("open", "save", "expect_flow_completed", "submit", "approve", "reject", "retake", "pick_record", "expect_query", "expect_not_listed", "fill_grid", "expect_grid",
                   "edit", "open_todo", "expect_visible", "submit_with_warning", "approve_blocked"):
             kwargs = {k: v for k, v in a.items()}
             return getattr(p, do)(**kwargs)

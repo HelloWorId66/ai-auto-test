@@ -120,3 +120,34 @@ def test_read_head_value_and_bill_models_load(prim, tmp_path):
     models = load_bill_models(f)
     assert models["DEMO_BILL"].status_col == "F_ZT"
     assert models["DEMO_BILL"].result_sql("detail").endswith("F_HEAD_ID = :f_head_id")
+
+def test_db_record_where_and_count(prim):
+    c = prim.db._conn
+    c.execute("insert into ZJ_DETAIL values('K1','-50.00')")
+    c.execute("insert into ZJ_DETAIL values('K1','-50.00')")
+    # 不给 count：只要有一条全部一致就算通过（不再只看第一条）
+    assert prim.expect_db_record("DEMO", "K1", "detail", {"F_AMT": "-50"}).ok
+    assert prim.expect_db_record("DEMO", "K1", "detail", count=3).ok
+    r = prim.expect_db_record("DEMO", "K1", "detail", count=2)
+    assert r.status is Status.FAILED and "3 条，期望 2 条" in r.message
+    # where 先圈出记录，count 数条数，expect 要求每一条都一致
+    assert prim.expect_db_record("DEMO", "K1", "detail", {"F_AMT": "-50"}, where={"F_AMT": "-50.00"}, count=2).ok
+    bad = prim.expect_db_record("DEMO", "K1", "detail", {"F_AMT": "-50"}, count=3)
+    assert bad.status is Status.FAILED and "第 1 条不一致" in bad.message
+    assert prim.expect_db_record("DEMO", "K1", "detail", where={"F_AMT": "999"}, count=0).ok
+    assert prim.expect_db_record("DEMO", "K1", "detail", where={"F_AMT": "999"}, absent=True).ok
+    assert prim.expect_db_record("DEMO", "K1", "detail", where={"F_AMT": "999"}).status is Status.FAILED
+    assert prim.expect_db_record("DEMO", "K1", "head", where={"F_ZT": "3"}, count=1).ok
+    assert prim.expect_db_record("DEMO", "K1", "head", where={"F_ZT": "1"}, count=0).ok
+    # 列名不是合法标识符时阻塞，不拼进语句
+    assert prim.expect_db_record("DEMO", "K1", "detail", where={"F_AMT; DROP": "1"}).status is Status.BLOCKED
+
+
+def test_where_clause_binds_values_and_handles_null():
+    from ifcat.statemodel import where_clause
+    sql, params = where_clause({"F_A": 1, "F_B": None, "F_C": "x' or '1'='1"})
+    assert sql == " AND F_A = :w0 AND F_B IS NULL AND F_C = :w2"
+    assert params == {"w0": "1", "w2": "x' or '1'='1"}
+    assert where_clause(None) == ("", {})
+    with pytest.raises(StateModelError):
+        where_clause(["F_A"])

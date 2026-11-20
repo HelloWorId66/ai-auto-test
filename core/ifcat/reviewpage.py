@@ -101,7 +101,7 @@ def _detail_of(s: Any, sc: Scenario) -> str:
     if s.do == "approve_blocked":
         return (f'<div class="expect">同意应被拦截，提示包含「{esc(_show(a["message"], sc))}」，单据仍留在待办</div>'
                 f'<div class="sub">单据：{esc(_show(a["bill"], sc))}</div>')
-    if s.do in ("reject", "open_todo"):
+    if s.do in ("reject", "retake", "open_todo"):
         return f'<div class="sub">单据：{esc(_show(a["bill"], sc))}</div>'
     if s.do == "capture_field":
         return f'<div class="sub">记下「{esc(_label(a["label"], sc))}」，后面步骤要用</div>'
@@ -117,14 +117,23 @@ def _detail_of(s: Any, sc: Scenario) -> str:
         return f'<div class="expect">数据库里单据状态应为{esc(st)}</div>'
     if s.do == "expect_db_record":
         what = _label(str(a["table"]), sc)
-        if a.get("absent"):
-            return f'<div class="expect">数据库里不应生成「{esc(what)}」</div>'
+
+        def chips(d: Dict[str, Any]) -> str:
+            # 库里存的是代码值（如到期指示 3），labels 里写「列名=值」可换成业务名称
+            return "".join(f"<span><b>{esc(_label(k, sc))}</b> {esc(_label(f'{k}={v}', sc) if f'{k}={v}' in sc.labels else _show(v, sc))}</span>"
+                           for k, v in d.items())
+
+        where = a.get("where") or {}
+        scope = f'<div class="sub">只看符合这些条件的记录</div><div class="data">{chips(where)}</div>' if where else ""
+        n = 0 if a.get("absent") else a.get("count")
         exp = a.get("expect") or {}
-        # 库里存的是代码值（如到期指示 3），labels 里写「列名=值」可换成业务名称
-        chips = "".join(f"<span><b>{esc(_label(k, sc))}</b> {esc(_label(f'{k}={v}', sc) if f'{k}={v}' in sc.labels else _show(v, sc))}</span>"
-                        for k, v in exp.items())
         wait = f'<div class="sub">后台异步生成，最多等待 {int(a["wait"])} 秒</div>' if a.get("wait") else ""
-        return f'<div class="expect">数据库里应已生成「{esc(what)}」</div><div class="data">{chips}</div>{wait}'
+        if n == 0:
+            return f'<div class="expect">数据库里不应有「{esc(what)}」</div>{scope}{wait}'
+        if n is not None:
+            each = f'<div class="sub">每一条都应为</div><div class="data">{chips(exp)}</div>' if exp else ""
+            return f'<div class="expect">数据库里「{esc(what)}」应正好有 <b>{int(n)}</b> 条</div>{scope}{each}{wait}'
+        return f'<div class="expect">数据库里应已生成「{esc(what)}」</div>{scope}<div class="data">{chips(exp)}</div>{wait}'
     if s.do == "pick_record":
         return f'<div class="sub">在选择弹窗里选「{esc(_show(a["find"], sc))}」并确定</div>'
     if s.do == "expect_not_listed":

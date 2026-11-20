@@ -55,3 +55,30 @@ def test_review_page_shows_new_checkpoints_in_business_words():
     assert "余额不足" in texts[0] and "继续处理" in texts[0]
     assert "当前可用余额不足" in texts[1]
     assert "不显示" in texts[2]
+
+def test_retake_registered_and_db_count_rendered_and_validated():
+    assert STEP_SPECS["retake"] == ["bill"] and "retake" not in CHECKPOINT_STEPS
+    sc = parse_scenario({
+        "id": "T-2", "title": "取回", "module": "DP", "feature": "企业定存存入", "kind": "主流程",
+        "roles": {"maker": "经办"}, "labels": {"change_log": "额度变动记录", "F_BDLX": "变动类型", "F_BDLX=1": "占用"},
+        "steps": [
+            {"id": "s1", "as": "maker", "do": "retake", "说明": "经办取回", "args": {"bill": "B1"}},
+            {"id": "d1", "as": "maker", "do": "expect_db_record", "说明": "占用记录一条",
+             "args": {"flow": "X", "key": "B1", "table": "change_log", "where": {"F_BDLX": "1"}, "count": 1,
+                      "expect": {"F_JE": "100"}}},
+            {"id": "d2", "as": "maker", "do": "expect_db_record", "说明": "还没有占用",
+             "args": {"flow": "X", "key": "B1", "table": "change_log", "where": {"F_BDLX": "1"}, "count": 0}},
+        ],
+    })
+    from ifcat.reviewpage import _detail
+    from ifcat.scenario import action_text, validate_scenario
+    assert action_text("retake") == "取回" and "B1" in _detail(sc.steps[0], sc)
+    d1, d2 = _detail(sc.steps[1], sc), _detail(sc.steps[2], sc)
+    assert "正好有 <b>1</b> 条" in d1 and "占用" in d1 and "每一条都应为" in d1
+    assert "不应有「额度变动记录」" in d2 and "占用" in d2
+    bad = parse_scenario({
+        "id": "T-3", "title": "x", "module": "DP", "feature": "f", "kind": "主流程", "roles": {"maker": "经办"},
+        "steps": [{"id": "d1", "as": "maker", "do": "expect_db_record", "说明": "x",
+                   "args": {"flow": "X", "key": "B1", "table": "t", "count": -1, "where": ["F_A"]}}]})
+    msgs = " ".join(str(i) for i in validate_scenario(bad, {}))
+    assert "count" in msgs and "where" in msgs

@@ -18,6 +18,8 @@ from .result import BlockedError
 UI_TEXT: Dict[str, str] = {
     "tab_todo": "我的待办",
     "tab_done": "已完成",
+    "tab_processed": "我的已办",
+    "retake": "取回",
     "refresh": "刷新",
     "agree": "同意",
     "reject": "退回",
@@ -92,16 +94,30 @@ def confirm_dialog(page: Any, button_text: str) -> None:
     waits.poll(lambda: page.locator(".ant-modal-wrap:visible").count() == 0, 10.0, "确认框关闭")
 
 
+# 只认当前看得见的行：首页几个页签的列表可能同时留在页面里，同一张单据会在隐藏的列表里也有一行
+_VISIBLE_ROWS = "[...document.querySelectorAll('.osp-row')].filter(x => x.offsetParent && x.innerText.includes(no))"
+
+
 def _row_index(page: Any, bill_no: str) -> Optional[str]:
     return page.evaluate(
-        """(no) => { const r = [...document.querySelectorAll('.osp-row')].find(x => x.innerText.includes(no));
-                     return r ? r.getAttribute('row-index') : null; }""", bill_no)
+        f"""(no) => {{ const r = {_VISIBLE_ROWS}[0];
+                     return r ? r.getAttribute('row-index') : null; }}""", bill_no)
 
 
 def bill_row_text(page: Any, bill_no: str) -> Optional[str]:
     return page.evaluate(
-        """(no) => { const r = [...document.querySelectorAll('.osp-row')].find(x => x.innerText.includes(no));
-                     return r ? r.innerText.replace(/\\n/g, '/') : null; }""", bill_no)
+        f"""(no) => {{ const r = {_VISIBLE_ROWS}[0];
+                     return r ? r.innerText.replace(/\\n/g, '/') : null; }}""", bill_no)
+
+
+def _row(page: Any, idx: str) -> Any:
+    # 一行在左、中、右三块区域里各有一段，共用 row-index，操作链接在右边那段
+    return page.locator(f".osp-row[row-index='{idx}']:visible")
+
+
+def row_has_action(page: Any, bill_no: str, label: str) -> bool:
+    idx = _row_index(page, bill_no)
+    return idx is not None and _row(page, idx).get_by_text(label, exact=True).count() > 0
 
 
 def open_tab(page: Any, tab: str) -> None:
@@ -127,7 +143,7 @@ def approve_until_done(page: Any, bill_no: str, ui: Optional[Dict[str, str]] = N
         idx = _row_index(page, bill_no)
         if idx is None:
             return done
-        page.locator(f".osp-row[row-index='{idx}']").get_by_text(agree, exact=True).first.click()
+        _row(page, idx).get_by_text(agree, exact=True).first.click()
         confirm_dialog(page, agree)
         done += 1
         page.wait_for_timeout(3000)
@@ -146,16 +162,16 @@ def row_action(page: Any, bill_no: str, label: str) -> None:
     """点待办行内的操作链接（同意、退回等）。"""
     idx = _row_index(page, bill_no)
     if idx is None:
-        raise BlockedError(f"待办里找不到单据 {bill_no}")
-    page.locator(f".osp-row[row-index='{idx}']").get_by_text(label, exact=True).first.click()
+        raise BlockedError(f"列表里找不到单据 {bill_no}")
+    _row(page, idx).get_by_text(label, exact=True).first.click()
 
 
 def row_flow_name(page: Any, bill_no: str) -> str:
     """待办行里「流程名称」那一格的文字（行文本第 2 项），点它可以打开单据。"""
     name = page.evaluate(
-        """(no) => { const r = [...document.querySelectorAll('.osp-row')].find(x => x.innerText.includes(no));
+        f"""(no) => {{ const r = {_VISIBLE_ROWS}[0];
                      if (!r) return null; const p = r.innerText.split('\\n').map(t => t.trim()).filter(Boolean);
-                     return p.length > 1 ? p[1] : null; }""", bill_no)
+                     return p.length > 1 ? p[1] : null; }}""", bill_no)
     if not name:
         raise BlockedError(f"待办里找不到单据 {bill_no}")
     return name
@@ -164,7 +180,7 @@ def row_flow_name(page: Any, bill_no: str) -> str:
 def open_bill_from_todo(page: Any, bill_no: str) -> None:
     name = row_flow_name(page, bill_no)
     idx = _row_index(page, bill_no)
-    page.locator(f".osp-row[row-index='{idx}']").get_by_text(name, exact=True).first.click()
+    _row(page, idx).get_by_text(name, exact=True).first.click()
 
 
 def page_error_banner(page: Any) -> str:
